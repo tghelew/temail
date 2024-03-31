@@ -1,0 +1,5 @@
+#+title: temail: Opiniated configuration for a full feature email servers
+#+author: Thierry Ghelew
+#+OPTIONS: toc:1
+* Why
+* HOW
