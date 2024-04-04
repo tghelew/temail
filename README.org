@@ -1,5 +1,54 @@
-#+title: temail: Opiniated configuration for a full feature email servers
+#+title: temail: Configuration for my email servers
 #+author: Thierry Ghelew
 #+OPTIONS: toc:1
 * Why
-* HOW
+The simple answer could be three words: /*Fun*/, /*Control*/, /*Privacy*/
+The long answer is that I owned a private mail server since 2012 which is still running today.
+At that time, I decided to use an out of the box project called [[https://kolab.org][Kolab]] which provided setup scripts and configurations
+to deploy a fully pledge mail, calendar, contact, and notes server. Unfortunately, this project stop to be fully supported as
+an open source. Additionally, I didn't (and still don't) understand how everything is glued together.
+
+Since almost one year I've been thinking of re-deploying a mail server from scratch by properly selecting the components that I want and fully understand how everything work, what was going on at each step, and how each component is configured. Additionally, my old mail server is based on CentOS and I've always wanted to have a mail server based on OpenBSD.
+
+No to mention that knowing that all my personal and professional emails are owned by a company that can read, analyze, and change their end user agreement terms unilaterally is not something I am willing to accept.
+
+That said, It is important to note that this repository is *made for me (and my weak memory)*. Therefore, It will certainly not work on your setup without changes.
+
+* How
+As said above, I want to run my mail server in OpenBSD, I don't want to give any reason to that choice as it is highly subjective most of the time. Suffice to say that I love the way it is built, maintained, and operate.
+
+Additionally, I want to have some kind of redundancy, that is, more than one VPS. Since VPSs are not expensive these days this should be easily feasible. The difficult part is to configure everything properly.
+Finally, in order to cope with my deficient memory, I want to note down and automate as much as possible the installation and configuration process.
+
+** Cloud Provider
+I used two main providers just for the sake of redundancy:
+1. [[https://openbsd.amsterdam][OpenBSD Amsterdam]] This is not your default provider as it provided only OpenBSD VMs and '/Technologies/' but it is in my opinion one of the best option to use and support the OpenBSD project.
+
+2. [[https://netcup.de][Netcup]] I don't know this provider well and it's the first time I'll be using it. But their prices are very competitive and they are based in Europe as well which is good since I'm also based in Europe.
+
+** Components
+These are the tools and application I'll integrate to build my mail server.
+The main rule is that if a tool exists in the OpenBSD base system then I'll use it. The second rule is that it must obviously be open source and the third rule is that it should be very easy to maintained.
+*** High Level overview: TBD
+
+- [[https://www.openbsd.org/faq/pf/][PF]]: the well known OpenBSD Packet Filter which is the first line of defense both for incoming connections and illetigimate mail.
+- [[https://man.openbsd.org/spamd][Spamd]]: the spam deferral daemon used in conjunction with PF to filter spammers.
+- [[https://www.opensmtpd.org][OpenSMTPD:]] the heart of the mail server which is fully available in OpenBSD base. Additionally, some filters and an SQL connector will be used as external packages.
+- [[https://www.rspamd.com/doc/quickstart.html][Rspamd]]: highly configurable spam filtering system
+- [[https://www.dovecot.org][Dovecot]]: IMAP server which I've been using since...ever although I don't really master its configuration yet thanks to Kolab
+- [[https://www.postgresql.org][PostgreSQL]]:This is my favorite database since a long time and I am very happy to be able to use it with replication for the first time.
+- [[https://letsencrypt.org][Let's Encrypt]]: I don't think it's necessary to describe what it is. But I'll use [[https://man.openbsd.org/acme-client.1][acme-client(1)]] included in OpenBSD base to get/sync my certificates.
+- *Monitoring & Health custom scripts*: As I want my setup to be highly available I need  a monitoring, alerting, and reporting tool that will check if one of my mail server is down or not working properly.
+  for that I intend to create simple scripts.
+
+*** Infrastructure
+    | Provider          | Name            | vCore | RAM |          ipv4 | ipv6                               | Role(s)      |
+    |-------------------+-----------------+-------+-----+---------------+------------------------------------+--------------|
+    | Netcup            | eshua.ghelew.ch |     2 | 2GB | 93.177.66.222 | 2a03:4000:38:e:b406:34ff:fedf:c5b7 | Controller   |
+    | OpenBSD Amsterdam | eshub.ghelew.ch |     1 | 1GB |   46.23.94.97 | 2a03:6000:6f67:622::97             | primary mx   |
+    | OpenBSD Amsterdam | eshuc.ghelew.ch |     1 | 1GB |  46.23.93.235 | 2a03:6000:93f4:632::235            | secondary mx |
+
+
+*** Setup
+
+1. [[./init/README.org][OpenBSD Installation]]

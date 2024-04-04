@@ -1,0 +1,62 @@
+#+TITLE: OpenBSD Installation
+#+author: Thierry Ghelew
+
+* Summary
+This part is mostly manual as it has to do with the installation of OpenBSD itself and the mandatory configurations. I will not go through the installation process as it is well documented all over the internet and also in the main [[https://www.openbsd.org/faq/faq4.html#Download][FAQ]] of the project.
+The only part that I want to highlight is the filesystem petitioning scheme I'll be using along with the common configuration for ssh and doas.
+
+** Disk Setup
+Reference: [[https://man.openbsd.org/disklabel][Disklabel(8)]] [[https://man.openbsd.org/hier][hier(7)]]
+
+This is the auto partitioning scheme provided during the installation
+[[../assets/images/init_disk_partioning.png]]
+
+With a disk size of 40GB and 2GB of RAM.
+| filesystem | size (GB) | percent |
+|------------+-----------+---------|
+| /          |         1 |     2.5 |
+| swap       |         3 |     7.5 |
+| /usr       |         3 |     7.5 |
+| /home      |         3 |     7.5 |
+| /tmp       |         1 |     2.5 |
+| /var       |        10 |     25. |
+| /var/log   |         2 |      5. |
+| /usr/local |         5 |    12.5 |
+| /var/misc  |        12 |     30. |
+|------------+-----------+---------|
+| Total      |        40 |    100. |
+#+TBLFM: @>$2=vsum(@I..@II)::$3=(@0$2/40) * 100::@>$3=vsum(@I..II)
+** Sets
+Make sure to remove unneeded sets like games and xservers
+[[../assets/images/init_sets_selection.png]]
+
+** OpenSSH
+I like to use a specific port ~[:2203]~ with [[https://www.openssh.com][OpenSSH]] which means changing configurations and relaunching the service.
+I also don't want anyone to be able to connect using ssh with a password.
+/Note: make sure to copy your ssh public key prior to change the above and restart the service/
+
+#+begin_src sh
+su -
+sed -i \
+    -e 's/#*Port.*/Port 2203/' \
+    -e 's/#*PermitRootLogin.*/PermitRootLogin no/' \
+    -e 's/#*PasswordAuthentication.*/PasswordAuthentication no/' \
+    /etc/ssh/sshd_config
+
+# Make sure to copy your ssh public key prior to execute command below
+# on the local machine where your public key is available:
+# ssh-copy-id -p 22 -fi /path/to/your/id user@remote
+
+rcctl restart sshd
+#+end_src
+
+** DOAS
+[[https://man.openbsd.org/doas][DOAS]] is a minimalist sudo that works very well in OpenBSD. The following are the configuration I like to set:
+
+#+begin_src sh
+cp -f /etc/examples/doas.conf /etc/doas.conf
+cat >> /etc/doas.conf <<-EOF
+    permit nopass keepenv thierry
+    permit nopass keepenv setenv { PATH } root as root
+EOF
+#+end_src
