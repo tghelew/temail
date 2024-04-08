@@ -1,0 +1,13 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://github.com/tmux/tmux/wiki][TMUX]] and [[https://man.openbsd.org/ksh][ksh]] which is included in base and the default interactive shell in OpenBSD. I do prefer [[https://zsh.sourceforge.io/Doc/Release/index.html#Top][zsh]] but I want to limit the number of external packages in my server. The configuration is based on the plugin manager [[https://github.com/tmux-plugins/tpm][TPM]] which requires ~bash~.
+/Note that I will not be using TPM directly as I don't want to install ~git~ in my server./
+The file [[file:packages.txt][package.txt]] contains all requires packages to install.
+the script [[./deploy.sh][deploy.sh] should executed on the target server to configure both the shell and tmux
+
+** TMUX
+the folder [[./tmux][tmux]] contains all the required configuration
+** KSH
+the folder [[./ksh][ksh]] contains all the required configuration

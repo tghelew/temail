@@ -1,0 +1,12 @@
+#+TITLE: Todos
+#+author:Thierry Ghelew
+
+* High
+** DONE Setup makefile
+** DONE Setup global kshrc
+** TODO Setup prompt
+** TODO Setup history command using fzf
+* Medium
+** TODO Add tmux plugins resurrect
+
+* Low
