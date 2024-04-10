@@ -56,7 +56,7 @@ rcctl restart sshd
 #+begin_src sh
 cp -f /etc/examples/doas.conf /etc/doas.conf
 cat >> /etc/doas.conf <<-EOF
-    permit nopass keepenv thierry
+    permit nopass keepenv setenv { ENV=/home/thierry/.profile } thierry
     permit nopass keepenv setenv { PATH } root as root
 EOF
 #+end_src

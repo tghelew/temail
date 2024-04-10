@@ -42,9 +42,20 @@ _message 'Info' 'Tmux setup completed!'
 
 # ksh
 _message "info" 'Initializing/Updating ksh...'
+$__ mkdir -p /etc/ksh
 
-_target=~/
+_target=/etc/ksh
+
+$__ cp -Rfpv ksh/config/. "${_target}"/
+$__ cp -fpv ksh/ksh.kshrc /etc/
+$__ cp -fpv ksh/rprofile /root/.profile
+
+$__ chown -RL root:wheel /etc/ksh.kshrc "${_target}" /root/.profile
+
+_target=$HOME
 cp -fpv ksh/profile $_target/.profile
+
+. $_target/.profile
 
 _message "info" 'ksh setup completed!'
 
