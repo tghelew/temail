@@ -1,0 +1,35 @@
+#!/bin/sh -
+#
+# Expire pfctl table after a given time in second
+
+# Turn off Strict Bourne shell mode
+set +o sh
+
+# parse input command
+# parameter 1: expiration in seconds
+# parameter 2: table list 
+parse_input() {
+#	set -o xtrace
+	local _expiration=0 _i=0
+	set -A _table -- "$@"
+
+	if [[ ${_table[$_expiration]} != +([[:digit:]]) ]]; then
+		print -u2 "WARNING: value: ${_table[$_expiration]} is not a valid number"
+		return
+	fi
+
+	(( ${#_table[*]} > 1 )) ||  return
+
+	while (( ++_i < ${#_table[*]}));do 
+		if ! pfctl -t "${_table[$_i]}" -T show >/dev/null 2>&1 ; then
+			print -u2 "WARNING: table ${_table[$_i]} does not exits"
+			continue
+		fi
+		
+		pfctl -t "${_table[$_i]}" -T expire ${_table[$_expiration]}
+	done
+
+
+}
+
+parse_input $@

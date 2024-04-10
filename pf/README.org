@@ -1,0 +1,11 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring the [[https://www.openbsd.org/faq/pf/][packet filter]] included by default in base. A general goal with this configuration is to block incoming traffics as much as possible and only let know users or machine to enter the system.
+At the same time I want to make it as painful as possible anyone that want to force the access to my server.
+** Tables
+- *t_server*: this is the list of authorized server which are my mails servers. Server-to-Server communication should consist of replication, health, and synchronization protocols.
+- *t_allowed*: this is the list of ip that is allowed. I use it to mainly allowed DNS request to my [[https://unbound.docs.nlnetlabs.nl/en/latest/][Unbound]] server which also act as an AdBlocker.
+- *t_blocked*: list of ips that I want to manually for one reason or another.
+- *t_bruteforce*: list of ips automatically added which are blocked for a given period of time

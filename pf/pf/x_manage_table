@@ -1,0 +1,47 @@
+#!/bin/sh -
+#
+# copy current content of pfctl table in file
+# NOTE: table file are name t_<pf table name>
+# 		e.g: in pf table <bruteforce> is named /etc/pf/t_bruteforce
+
+# Turn off Strict Bourne shell mode
+set +o sh
+
+# parse input command
+# parameter 2: table list or null for all table in folder
+
+parse_input() {
+#	set -o xtrace
+	local _i=0 _root=/etc/pf/ _utable
+	set -A _table -- "$@"
+
+	if (( ${#_table[*]} <= 0 )); then 
+		for file in `ls ${_root}t_*`; do
+			_utable=${file##*t_}
+			if [ ! -f "${file}" ]; then
+				continue
+			fi
+			print "Saving table ${_utable} into file ${file}"
+			pfctl -t "${_utable}" -T show > "${file}"
+		done
+	else
+
+		while (( _i++ < ${#_table[*]}));do 
+			if [ ! pfctl -t "${_table[_i-1]}" -T show >/dev/null 2>&1 ] ; then
+				print -u2 "WARNING: table ${_table[_i-1]} does not exits"
+				continue
+			fi
+			if [ ! -f "${_root}t_${_table[_i-1]}" ]; then
+				print -u2 "WARNING: file ${_root}t_${_table[_i-1]} does not exits"
+				continue
+			fi
+		
+			print "Saving table ${_table[_i-1]} into file ${_root}t_${_table[_i-1]}"
+			pfctl -t "${_table[$_i-1]}" -T show > "${_root}t_${_table[$_i-1]}"
+		done
+	fi
+
+
+}
+
+parse_input $@

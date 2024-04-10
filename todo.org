@@ -7,6 +7,7 @@
 ** DONE Setup prompt
 ** TODO setup pf
 ** TODO setup unbound
+** TODO setup function to update crontab
 
 
 * Medium
