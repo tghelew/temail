@@ -4,9 +4,13 @@
 * High
 ** DONE Setup makefile
 ** DONE Setup global kshrc
-** TODO Setup prompt
-** TODO Setup history command using fzf
+** DONE Setup prompt
+** TODO setup pf
+** TODO setup unbound
+
+
 * Medium
 ** TODO Add tmux plugins resurrect
 
 * Low
+** TODO Setup history command using fzf
