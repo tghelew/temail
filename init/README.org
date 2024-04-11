@@ -60,3 +60,11 @@ cat >> /etc/doas.conf <<-EOF
     permit nopass keepenv setenv { PATH } root as root
 EOF
 #+end_src
+** Hostname
+Set the hostname with the proper domain.
+#+begin_src sh
+hostname eshua.ghelew.ch
+cat > /etc/myname <<-EOF
+    eshua.ghelew.ch
+EOF
+#+end_src
