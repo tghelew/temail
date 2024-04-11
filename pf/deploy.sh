@@ -29,7 +29,7 @@ esac
 
 _run_checks "pfctl"
 
-# tmux
+# pf
 _message "info" 'Initializing/Updating pf...'
 _isnew=y
 _target="/etc/pf"
@@ -40,7 +40,7 @@ if [[ -d "${_target}" ]]; then
 fi
 if [[ $_isnew == "n" ]]; then
     # Do not copy bruteforce nor blocked tables
-    $__ cp -fpv ./pf/!(blocked|bruteforce) "${_target}/"
+    $__ cp -fpv ./pf/!(*blocked|*bruteforce) "${_target}/"
 else
     $__ mkdir -p "${_target}"
     $__ cp -Rfpv ./pf/. "${_target}"/
@@ -50,6 +50,14 @@ $__ cp -fpv ./$_pfconf /etc/pf.conf
 $__ chown -RL root:wheel "${_target}" /etc/pf.conf
 
 $__ pfctl -f /etc/pf.conf
+
+# crontab
+cat <<-EOF | _update_crontab 'pf' 'root'
+#-----------------------------------pf Start------------------------------------
+0~7     6       *       *       *       -ns $SHELL /etc/pf/x_expire_table 86400 blocked bruteforce
+*/10    *       *       *       *       -ns $SHELL /etc/pf/x_manage_table
+#-----------------------------------pf End--------------------------------------
+EOF
 _message 'Info' 'PF setup completed!'
 
 cd "${_curpwd}"

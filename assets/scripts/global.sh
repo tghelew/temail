@@ -8,7 +8,6 @@ DEBUG=n
 
 __='doas -n '
 
-#---- Validation
 _message () {
    [ $DEBUG != 'n' ] && set -x
    typeset -u mtype # all value are converted to upper case
@@ -48,4 +47,37 @@ _add_packages () {
         _message "Error" "file ${1} cannot be found!"
     fi
 }
-#--- END Validation
+
+_update_crontab () {
+    _run_checks "id sed crontab cat"
+
+    local tmpfile=$(mktemp /tmp/temail.XXXXXXX.crontab)
+    trap "[ -f $tmpfile ] && rm -f $tmpfile" ERR
+
+    local location="$1"
+    [ -z $location ] && \
+        _message 'Error' "The location in the cron file cannot be empty"
+
+    local user="${2:-root}"
+      id -u $user >/dev/null 2>&1 ||  \
+        _message 'Error' "The user $user does not exist"
+    shift ${#@}
+
+    $__ crontab -l > $tmpfile
+
+    # Remove previous entries which must must be like:
+    # #-$location Start---
+    # #-$location End---
+    sed -Ei "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/D" $tmpfile
+
+    # add new cron tab
+    while read -u  ctab 2>/dev/null; do
+        print "$ctab"  >> $tmpfile
+    done
+
+    $__ crontab -u $user $tmpfile
+
+
+    [ -f $tmpfile ] && rm -f $tmpfile
+
+}

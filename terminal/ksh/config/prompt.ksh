@@ -57,7 +57,14 @@ function _prompt_pwd {
 }
 
 function _prompt_show {
-    print $(_color 'blue' "!!\!")$(_color 'default' "  ")$(_prompt_pwd)"\n"$(_prompt_chars $1)" "
+    case "${TERM:-dumb}" in
+        xterm*|screen*|eterm*|rxvt*)
+            print $(_color 'blue' "!!\!")$(_color 'default' "  ")$(_prompt_pwd)"\n"$(_prompt_chars $1)" "
+        ;;
+        *)
+            print '\w \$ '
+        ;;
+    esac
 }
 
 PS1="\$(_prompt_show \$?)"
