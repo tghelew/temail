@@ -5,9 +5,14 @@
 ** DONE Setup makefile
 ** DONE Setup global kshrc
 ** DONE Setup prompt
-** TODO setup pf
+** DONE setup pf
 ** TODO setup unbound
-** TODO setup function to update crontab
+** TODO Create operator user
+** DONE setup function to update crontab
+** TODO basic smtp
+** TODO setup nsd & configure he.net
+** TODO certificates & sync script
+** TODO setup database and php admin
 
 
 * Medium

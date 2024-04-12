@@ -1,0 +1,47 @@
+$ORIGIN ghelew.ch.
+$TTL 86400
+ghelew.ch.	172800	IN	SOA	ns1.he.net. hostmaster.ghelew.ch. (
+					2024041205	;serial
+					10800		;refresh 3h
+					1800		;retry 30min
+					36000000	;expire 1000h
+					3600	)	;minimum
+
+eshua.ghelew.ch.	3600	IN	A	93.177.66.222
+eshub.ghelew.ch.	3600	IN	A	46.23.94.97
+eshuc.ghelew.ch.	3600	IN	A	46.23.93.235
+
+eshua.ghelew.ch. 	86400  IN SSHFP 1 1 f3f56b88f1365fc532aa101916d0cd6b47ad2a24
+eshua.ghelew.ch. 	86400  IN SSHFP 1 2 469e2484149911a51136b307715daccb47050822bb3b99a54b07d48190f653f9
+eshua.ghelew.ch. 	86400  IN SSHFP 3 1 6454fb097cd6f085bbd317f5919defd046fdf187
+eshua.ghelew.ch. 	86400  IN SSHFP 3 2 c5b525c646bb0d40ba05f7356eaa2cf69b47b9bf717863c20b00cc7fc076b06c
+eshua.ghelew.ch. 	86400  IN SSHFP 4 1 8ddfe3b1e39f9be2b201d7844910a102ddd7b2ac
+eshua.ghelew.ch. 	86400  IN SSHFP 4 2 83498324987f3fbeea3643f018742950acbb1efcaa2e4bfbb9accb59e76b29c7
+
+eshub.ghelew.ch. 	86400  IN SSHFP 1 1 5690ce09a36d78149f1c760afcce739d8f107fed
+eshub.ghelew.ch. 	86400  IN SSHFP 1 2 609a70fce51c0505d2c016accd9efc69691f076bdc59bcc18d58bd9d7514f6b2
+eshub.ghelew.ch. 	86400  IN SSHFP 3 1 f9ae133d244e7294d772cf6153823c37f4c38e91
+eshub.ghelew.ch. 	86400  IN SSHFP 3 2 fd0e7333f858a8a1960d50c10148ef91be9a4b700c6a8adc3f6800544e2f41c9
+eshub.ghelew.ch. 	86400  IN SSHFP 4 1 f3e983711f6f1a8480f7ef66b09ea52908e73071
+eshub.ghelew.ch. 	86400  IN SSHFP 4 2 c2b8b582fddf900c356738362e3e2ea6384efa0a1583ca31f5e1a6518d6f4ad1
+
+echuc.ghelew.ch.  	86400  IN SSHFP 1 1 d58da0c1331a218e3086e8888a0f2584ea39a65a
+echuc.ghelew.ch.  	86400  IN SSHFP 1 2 d041d73e051f913f760f7d4aa7e6252ab91bec40711f7d7c963183f5ba6a6637
+echuc.ghelew.ch.  	86400  IN SSHFP 3 1 f52ecf09987e48723a3c4a1611530c63e53105e6
+echuc.ghelew.ch.  	86400  IN SSHFP 3 2 fe87a0dc4574753f52636924d02b10150e0fc782f761d5a66c15aa50c1098125
+echuc.ghelew.ch.  	86400  IN SSHFP 4 1 a7b7344bee7ca9b9a8621e745387b11ab7e60844
+echuc.ghelew.ch.  	86400  IN SSHFP 4 2 36f7190a1e857913a2b8bf93f0201ecb76d279a9c6d228fa677b6d38ecc5222f
+
+ghelew.ch.			86400	IN	NS	ns1.he.net.
+ghelew.ch.			86400	IN	NS	ns2.he.net.
+ghelew.ch.			86400	IN	NS	ns3.he.net.
+ghelew.ch.			86400	IN	NS	ns4.he.net.
+ghelew.ch.			86400	IN	NS	ns5.he.net.
+
+ghelew.ch.			86400	IN	MX	10 mail.ghelew.ch.
+
+ghelew.ch.			86400	IN	TXT	"v=spf1 a mx -all"
+
+mail.ghelew.ch.		3600	IN	A		46.101.244.21
+mail.ghelew.ch.		86400	IN	AAAA	2600:3c01::a123:b456:c789:d012
+smtp.ghelew.ch.		86400	IN	CNAME	mail.ghelew.ch.
