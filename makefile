@@ -1,8 +1,8 @@
 DEPLOY = deploy.sh
 PARAMS ?= C # C: controller M: mail
-TARGETS = terminal pf nsd
+TARGETS = terminal pf nsd httpd
 CONTROLLER = terminal pf nsd
-MAIL = terminal pf unbound
+MAIL = terminal pf unbound httpd
 
 # list of dependencies for targets
 depends = $(shell find $(1) -type f -iname '*.sh' -or -iname '*.tmux' -or -iname '*.conf')

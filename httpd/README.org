@@ -1,0 +1,5 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://man.openbsd.org/httpd][httpd]] for my mail server and certificate validation. As the configuration is self explanatory please look at [[https://man.openbsd.org/httpd.conf.5][httpd.conf]] for more details as to the meaning of this file.
