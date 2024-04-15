@@ -1,0 +1,22 @@
+$ORIGIN ghesan.net.
+$TTL 86400
+ghesan.net. 172800 IN SOA ns1.he.net. hostmaster.ghelew.ch. (
+                    2024041410  ;serial
+                    10800       ;refresh 3h
+                    1800        ;retry 30min
+                    36000000    ;expire 1000h
+                    3600    )   ;minimum
+
+ghesan.net.                 86400   IN  MX      10 mx01.mail.icloud.com.
+ghesan.net.                 86400   IN  MX      10 mx02.mail.icloud.com.
+
+ghesan.net.                 86400   IN  NS      ns1.he.net.
+ghesan.net.                 86400   IN  NS      ns2.he.net.
+ghesan.net.                 86400   IN  NS      ns3.he.net.
+ghesan.net.                 86400   IN  NS      ns4.he.net.
+ghesan.net.                 86400   IN  NS      ns5.he.net.
+
+ghesan.net.                 86400   IN  TXT     apple-domain=KzaPNk4Jz7I7LF5l
+ghesan.net.                 86400   IN  TXT     "v=spf1 include:icloud.com ~all"
+
+sig1._domainkey.ghesan.net. 86400   IN  CNAME   sig1.dkim.ghesan.net.at.icloudmailadmin.com.
