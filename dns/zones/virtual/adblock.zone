@@ -1,0 +1,13 @@
+$TTL 1d                         ;default TTL
+@                   172800	IN	SOA	eshua.ghelew.ch. hostmaster.ghelew.ch. (
+					2024041510	;serial
+					7d		    ;refresh
+					24h		;retry
+					36000000	;expire
+					7d	)	    ;minimum
+
+                            IN  NS eshua.ghelew.ch.
+                            IN  NS eshub.ghelew.ch.
+                            IN  NS eshuc.ghelew.ch.
+
+;;--Domain to filter

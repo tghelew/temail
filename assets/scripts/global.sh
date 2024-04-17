@@ -11,13 +11,28 @@ __='doas -n '
 _message () {
    [ $DEBUG != 'n' ] && set -x
    typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   local mtab=""
    mtype=${1:-"Error"}
+   typeset -i numtab=${mtype%%[a-zA-Z]*}
    shift
+
+   case $numtab in
+       [1-9])
+           for _ in $(seq -s" " ${numtab}); do
+               mtab="\t$mtab"
+           done
+           ;;
+
+   esac
+   mpattern="$mtab$mpattern"
+   mtype="${mtype#[0-9]}"
+
    if [[ ${mtype} == "ERROR"  ]]; then
-      >&2 printf "%s: %s\n" $mtype "${@:-\"Something happends...\"}"
+      >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
       exit 1
    else
-       printf "%s: %s\n" $mtype "${@:-\"Something happends...\"}"
+       printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
    fi
 }
 
@@ -40,11 +55,17 @@ _run_checks () {
 
 _add_packages () {
     if [ -f "${1}" ]; then
-        _message "Info" "Installing additional package(s)..."
-        $__ pkg_add -Vvl "${1}"
-        _message "Info" "Done: Installing additional package(s)"
+        local _tmp=$(mktemp /tmp/temail.XXXXXXX.package)
+        trap "[ -f ${_tmp} ] && rm -f ${_tmp}" ERR EXIT
+
+        _message "1Info" "Installing additional package(s)..."
+         $__ pkg_add -Vvl "${1}" > "${_tmp}" 2>&1
+         while read -ru l ; do
+             printf "\t\t%s\n" "$l"
+         done < ${_tmp}
+        _message "1Info" "Done: Installing additional package(s)"
     else
-        _message "Error" "file ${1} cannot be found!"
+        _message "1Error" "file ${1} cannot be found!"
     fi
 }
 
@@ -79,5 +100,89 @@ _update_crontab () {
 
 
     [ -f $tmpfile ] && rm -f $tmpfile
+
+}
+
+# Check diff of files in a given folder
+# parameters:
+#   -s source directory
+#   -f filename pattern (file globbing only)
+#   -t target directory
+#   -i ignore pattern: pattern to ignore in the diff
+# output: (D|S|E)@f;... | X@d;...
+#  - D: source and target file are Different
+#  - S: source and target file are the Same
+#  - E: error was not able to process file f
+#  - X: unalble to read Directory d
+#  - f: fullpath of source filename
+_check_diff() {
+    local output="";
+    local source="";
+    local target="";
+    local files="";
+    local regex="";
+    local filter="";
+    local usage=$(cat <<-EOF
+        Usage: _check_diff -s DIR -t DIR -f pattern [-i regex] ...
+          Perform a diff of Source files with Target files,
+          Ignoring regex found in files.
+          Pattern support glob(7)
+          Regex support re_format(7)
+EOF
+          );
+
+    trap "print \"$usage\"" ERR
+
+    while getopts s:t:f:i: p; do
+        case $p in
+            s) source=$OPTARG
+               ;;
+            t) target=$OPTARG
+               ;;
+            f) files=$OPTARG
+               ;;
+            i) regex="$OPTARG${regex:+ }${regex}"
+               ;;
+            *) print "$usage"
+               return 1
+               ;;
+        esac
+    done
+    shift $(($OPTIND - 1))
+    # Validation of input
+    if [[ "x$source" == "x" || "x$target" == "x" || "x$files" == "x" ]]; then
+        return 1
+    elif [[ ! -d "$source" ]]; then
+        output="X@$source${output:+;}${output}"
+    elif $__ test ! -d "$target"; then
+        output="X@$target${output:+;}${output}"
+    fi
+    [[ "x$output" != "x" ]] && { print "$output"; return 0; }
+    _run_checks "find diff"
+    # Done
+    files=$(cd "$source";find . -type f -iname "$files")
+    for r in $regex; do
+        filter="-I '$r' ${filter}"
+    done
+    for f in $files; do
+        f="${f#*/}"
+        if [[ ! -f "$source/$f" ]]; then
+            output="E@$f${output:+;}${output}"
+            continue
+        elif $__ test ! -f "$target/$f"; then
+            output="E@$f${output:+;}${output}"
+            continue
+        fi
+        if $($__ diff -qb $filter "$source/$f" "$target/$f" >/dev/null 2>&1); then
+            # file did not change
+            output="S@$source/$f${output:+;}${output}"
+        else
+            # file did change
+            output="D@$source/$f${output:+;}${output}"
+        fi
+    done
+
+    # show the answer
+    print "$output"
 
 }

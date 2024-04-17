@@ -1,0 +1,65 @@
+#!/usr/bin/env ksh
+set -euo pipefail
+
+set -x #DEBUG
+
+PATH="/bin:/sbin:/usr/local/bin:/usr/bin:/usr/sbin"
+COLUMN=120
+
+_tmp=$(mktemp /tmp/temail.XXXXXXX.zone)
+_serial=$(date +'%Y%m%d01')
+
+trap "[ -f $_tmp ] && rm -f $_tmp;" ERR EXIT
+
+_out="/var/named/zones/adblock.zone"  # zone file
+
+[ -O "$_out" ] || _message "Error" "Cannot alter file: $_out"
+
+sed -e '/^/,/;;--Domain.*/' "$_out" > "$_tmp"
+
+# AdGuard Home
+adguardhome() {
+  # AdGuard DNS filter
+  _src="https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt"
+  ftp -MVo - "$_src" | \
+  sed -nre 's/^\|\|([a-zA-Z0-9\_\-\.]+)\^.*$/\1@IN@CNAME@.@;NXDOMAIN policy/p'
+
+  # AdGuard Français
+  _src="https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/FrenchFilter/sections/adservers.txt"
+  ftp -MVo - "$_src" | \
+  sed -nre 's/^\|\|([a-zA-Z0-9\_\-\.]+)\^.*$/\1@IN@CNAME@.@;NXDOMAIN policy/p'
+
+  # AdAway default blocklist
+  _src="https://adaway.org/hosts.txt"
+  ftp -MVo - "$_src" | \
+  awk '/^127.0.0.1 / { print $2"@IN@CNAME@.@;NXDOMAIN policy" }'
+}
+
+# From Pi-hole
+stevenblack() {
+  _src="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+  ftp -MVo - "$_src" | \
+  awk '/^0.0.0.0 / {  print $2"@IN@CNAME@.@;NXDOMAIN policy"  }'
+}
+
+
+touch "$_out"
+# Grab and format the data
+adguardhome >> "$_tmp"
+stevenblack >> "$_tmp"
+
+# Clean entries and format entries
+sed -r -e 's/\\//' \
+       -e 's/\.\"/\"/' "$_tmp" |\
+column -t -s '@' |\
+sort -u -o "$_tmp"
+
+
+# Take action is required
+if $(diff -I'^;;--.*$' -qb "$_out" "$_tmp" >/dev/null 2>&1 ); then
+    _message 'Info' "Add block did not changed... skipping "
+else
+    # change serial
+    sed -nEi "/;serial/,/+1/s/(^[[:space:]]+)[0-9]+([[:space:]]+;serial.*$)/\1$_serial\2/" "$_tmp"
+    cat $_tmp > $_out
+fi
