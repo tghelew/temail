@@ -5,5 +5,9 @@
 :PROPERTIES:
 :ID:       c5b7e52f-bf61-4a93-b2ab-2f418bee6c7e
 :END:
-This part setup [[https://nsd.docs.nlnetlabs.nl/en/latest/][NSD]] server which is the authoritative dns for my domain. It is hidden by default and only the slave read-only server is visible online.
-The configuration is self-explanatory after reading the [[https://man.openbsd.org/nsd.conf][man]] page.
+This part setup [[https://bind9.readthedocs.io/en/v9.18.25/index.html][BIND9]] dns server which is the authoritative dns for my domains. It is hidden by default and only the slave read-only server is visible online.
+The configuration is quite complex but well described in the above link. I am forced to used BIND9 instead of the included
+NSD (in OpenBSD) because I need to:
+- Include recursive dns queries as this dns server is also used privately.
+- Include response policy which /as far as I know/ are not included in NSD.
+- Use dynamic dns due to Let's encrypt requirements. I wants to have a wildcard certificate for all my domains.

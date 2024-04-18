@@ -1,9 +1,0 @@
-#+TITLE: Readme
-#+author: Thierry Ghelew
-
-* Summary
-:PROPERTIES:
-:ID:       c5b7e52f-bf61-4a93-b2ab-2f418bee6c7e
-:END:
-This part setup [[https://nsd.docs.nlnetlabs.nl/en/latest/][NSD]] server which is the authoritative dns for my domain. It is hidden by default and only the slave read-only server is visible online.
-The configuration is self-explanatory after reading the [[https://man.openbsd.org/nsd.conf][man]] page.

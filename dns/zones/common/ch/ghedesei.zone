@@ -1,0 +1,15 @@
+$ORIGIN ghedesei.ch.
+$TTL 86400
+ghedesei.ch.	172800	IN	SOA	ns1.he.net. hostmaster.ghelew.ch. (
+					2024041704	;serial
+					10800		;refresh 3h
+					1800		;retry 30min
+					36000000	;expire 1000h
+					3600	)	;minimum
+
+
+ghedesei.ch.			86400	IN	NS	ns1.he.net.
+ghedesei.ch.			86400	IN	NS	ns2.he.net.
+ghedesei.ch.			86400	IN	NS	ns3.he.net.
+ghedesei.ch.			86400	IN	NS	ns4.he.net.
+ghedesei.ch.			86400	IN	NS	ns5.he.net.

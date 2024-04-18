@@ -19,6 +19,8 @@ alias reboot='doas reboot'
 
 
 alias _='doas'
+alias rdnc='doas rndc '
+alias rdnc='doas rndc '
 # I want to retain my prompt and functions
 alias _r="doas -u root $SHELL -l"
 

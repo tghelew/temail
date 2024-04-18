@@ -56,7 +56,18 @@ _run_checks () {
 _add_packages () {
     if [ -f "${1}" ]; then
         local _tmp=$(mktemp /tmp/temail.XXXXXXX.package)
-        trap "[ -f ${_tmp} ] && rm -f ${_tmp}" ERR EXIT
+        local l=""
+        local _clean=$(cat <<-EOF
+            if [ -f ${_tmp} ]; then
+            while read -ru l; do
+                printf "\t\t%s\n" "$l"
+            done < ${_tmp}
+            rm -f ${_tmp}
+            fi
+EOF
+                    )
+
+        trap "$_clean" ERR EXIT
 
         _message "1Info" "Installing additional package(s)..."
          $__ pkg_add -Vvl "${1}" > "${_tmp}" 2>&1
@@ -64,6 +75,8 @@ _add_packages () {
              printf "\t\t%s\n" "$l"
          done < ${_tmp}
         _message "1Info" "Done: Installing additional package(s)"
+        [ -f ${_tmp} ] && rm -f ${_tmp}
+
     else
         _message "1Error" "file ${1} cannot be found!"
     fi
@@ -175,10 +188,10 @@ EOF
         fi
         if $($__ diff -qb $filter "$source/$f" "$target/$f" >/dev/null 2>&1); then
             # file did not change
-            output="S@$source/$f${output:+;}${output}"
+            output="S@$f${output:+;}${output}"
         else
             # file did change
-            output="D@$source/$f${output:+;}${output}"
+            output="D@$f${output:+;}${output}"
         fi
     done
 
