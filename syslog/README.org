@@ -1,0 +1,7 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring the [[https://man.openbsd.org/syslogd.8][syslogd]] and [[https://man.openbsd.org/newsyslog.8][newsyslog]] included by default in base.
+The final goal is to have all my logs sent to a main server for now it will be my controller server.
+Configuring both programs is quite cryptic but thanks to both man it's easily feasible.
