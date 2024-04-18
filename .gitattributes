@@ -1,4 +1,4 @@
 # prevent .gitattributes from being encrypted
 .gitattributes !filter !diff
 *.key filter=git-crypt diff=git-crypt
-common/rdnc.conf filter=git-crypt diff=git-crypt
+dns/**/rndc.conf filter=git-crypt diff=git-crypt
