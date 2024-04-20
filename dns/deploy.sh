@@ -19,7 +19,7 @@ _isnew=y
 _target_dir="/var/named"
 _target_script="/usr/local/bin/named-adblock"
 
-_run_checks "diff named named-checkconf rndc"
+_run_checks "diff"
 
 
 __apply_changes() {
@@ -106,7 +106,6 @@ EOF
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}/zones" -f "*.zone")
     __apply_changes 1 "$check" "$source_dir" "${_target_dir}/zones"
 
-
     _message '1info' 'Deploying/Updating common done!'
 }
 
@@ -161,6 +160,25 @@ EOF
     _message '1info' 'Deploying/Updating adzone done!'
 }
 
+_deploy_resolv() {
+    _message '1info' 'Deploying/Updating resolv'
+    # check if file has changed:
+    local source_dir="./resolv"
+    local check=""
+    _target_dir="/etc"
+
+    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.conf")
+    __apply_changes 1 "$check" "$source_dir" "${_target_dir}"
+
+    $__ chown root:wheel "${_target_dir}/resolv.conf"
+    $__ chmod 644 "${_target_dir}/resolv.conf"
+
+    $__ rcctl stop resolvd
+    $__ rcctl disable resolvd
+
+    _message '1info' 'Deploying/Updating resolv done!'
+}
+
 _deploy_checkconf() {
     local _tmp=$(mktemp /tmp/temail.XXXXXXX.dns)
     local l=""
@@ -187,31 +205,32 @@ EOF
 
 _add_packages ./packages.conf
 
-local service=isc_named
-
+local service="isc_named"
 case $_type in
     C*)
         _deploy_common
         _deploy_custom "controller.conf"
         _deploy_adzone
         _deploy_checkconf
+        _deploy_resolv
     ;;
     M*)
         _deploy_common
         _deploy_custom "mail.conf"
         _deploy_checkconf
+        _deploy_resolv
     ;;
     *)
         _message 'Error' 'Unknown deployment type.'
     ;;
 esac
 _message '1Info' 'Initializing/Restarting named services'
-if $($__ rndc -q status >/dev/null 2>&1); then
+if [[ $($__ rcctl ls on | grep -i "$service") == "$service" ]]; then
     _message '2info' 'Named service already configured, reloading'
     $__ rndc -q reload >/dev/null 2>&1
 else
     _message '2info' 'Initializing named services...'
-    $__ update-named-adblock
+    [[ "$_type" == "C*" ]] && $__ update-named-adblock
     $__ rcctl enable $service > /dev/null
     $__ rcctl set $service flags -t /var/named -c etc/named.conf -u _bind > /dev/null
     $__ rcctl start $service > /dev/null
