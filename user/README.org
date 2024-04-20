@@ -1,0 +1,8 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about creating and update users. Depending on the server's type different user will be created. Most of the time it will be targeted for mail server types
+** Users
+- *temail*: this user is for maintenance and update activities for both the controller and the mail servers. Its role is to sync certificates and configuration files. For that purpose this user will have special ~doas~ privileges.
+- *vmail*: As its name suggest this user is for everything related to email.

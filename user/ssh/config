@@ -1,0 +1,19 @@
+VerifyHostKeyDNS yes
+
+Host eshua*
+    Host eshua.ghelew.ch
+    IdentityFile ~/.ssh/id_eshu.key
+    Port 2203
+    Protocol 2
+
+Host eshub*
+    Host eshub.ghelew.ch
+    IdentityFile ~/.ssh/id_eshu.key
+    Port 2203
+    Protocol 2
+
+Host eshuc*
+    Host eshuc.ghelew.ch
+    IdentityFile ~/.ssh/id_eshu.key
+    Port 2203
+    Protocol 2

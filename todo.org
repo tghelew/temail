@@ -9,7 +9,7 @@
 ** KILL setup unbound
 ** TODO Create operator user
 ** DONE setup function to update crontab
-** TODO setup bind & configure he.net
+** DONE setup bind & configure he.net
 ** TODO certificates & sync script
 ** TODO setup database and php admin
 ** TODO basic smtp
@@ -18,6 +18,8 @@
 * Medium
 ** TODO Add tmux plugins resurrect
 ** TODO setup dnssec bind
+** TODO configure syslog to send logs to controller on mail servers
+** TODO move domain ghelew.net to slave
 ** KILL Setup crontab to compress nsd backup config (monthly)
 
 
