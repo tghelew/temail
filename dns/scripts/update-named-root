@@ -1,0 +1,71 @@
+#!/usr/bin/env ksh
+set -euo pipefail
+
+PATH="/bin:/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin"
+
+_block=$(mktemp /tmp/temail.XXXXXXX.zone)
+_clean=$(cat <<-EOF
+[ -f $_block ] && rm -f $_block;
+EOF
+)
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   local mtab=""
+   mtype=${1:-"Error"}
+   typeset -i numtab=${mtype%%[a-zA-Z]*}
+   shift
+
+   case $numtab in
+       [1-9])
+           for _ in $(seq -s" " ${numtab}); do
+               mtab="\t$mtab"
+           done
+           ;;
+
+   esac
+   mpattern="$mtab$mpattern"
+   mtype="${mtype#[0-9]}"
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+      >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+      exit 1
+   else
+       printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+   fi
+}
+
+trap "$_clean" ERR EXIT
+
+_out="/var/named/zones/root.zone"  # zone file
+
+[ -f "$_out" ] || _message "Error" "Cannot alter file: $_out"
+
+
+# From Pi-hole
+root_zone() {
+  _src="ftp://rs.internic.net/domain/named.root"
+  ftp -MVo - "$_src"
+}
+
+
+touch "$_out"
+# Grab and format the data
+root_zone >> "$_block"
+
+# Take action is required
+if $(diff -qb "$_out" "$_block" >/dev/null 2>&1 ); then
+    _message 'Info' "Root zone did not changed... skipping "
+else
+    cat $_block > $_out
+    chown _bind:_bind $_out
+    named-checkzone . $_out
+    if $(rndc -q status >/dev/null 2>&1); then
+      rndc -q reload . >/dev/null 2>&1
+    elif $(rcctl ls on | grep -qi isc_named); then
+      rcctl restart isc_named
+      sleep 5
+      rndc -q reload >/dev/null 2>&1
+    fi
+fi

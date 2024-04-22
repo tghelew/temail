@@ -106,6 +106,23 @@ EOF
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}/zones" -f "*.zone")
     __apply_changes 1 "$check" "$source_dir" "${_target_dir}/zones"
 
+    _message '2info' 'Deploying/Updating update script'
+
+    source_dir='./scripts'
+    _target_dir="/usr/local/bin"
+    local target_file='update-named-root'
+    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "$target_file*")
+    __apply_changes 2 "$check" "$source_dir" "$_target_dir"
+    $__ chown root:bin /usr/local/bin/"$target_file"
+
+    # crontab
+    cat <<-EOF | _update_crontab 'root.zone' 'root'
+    #-----------------------------------root.zone Start------------------------------------
+    0~10     6       1      */3       *       -ns  /usr/local/bin/update-named-root
+    #-----------------------------------root.zone End--------------------------------------
+EOF
+
+    _message '2info' 'Deploying/Updating script done!'
     _message '1info' 'Deploying/Updating common done!'
 }
 
@@ -128,6 +145,19 @@ _deploy_custom() {
 
     rm -f "$source_dir"/"$target_file"
     _message '1info' 'Deploying/Updating custom config done!'
+}
+
+_deploy_primary() {
+    _message '1info' 'Deploying/Updating primary zones'
+
+    local source_dir="./zones/primary"
+    local check=""
+    _target_dir="/var/named/zones"
+
+    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.zone")
+    __apply_changes 1 "$check" "$source_dir" "$_target_dir"
+
+    _message '1info' 'Deploying/Updating primary zones done!'
 }
 
 _deploy_adzone() {
@@ -209,6 +239,7 @@ local service="isc_named"
 case $_type in
     C*)
         _deploy_common
+        _deploy_primary
         _deploy_custom "controller.conf"
         _deploy_adzone
         _deploy_checkconf
