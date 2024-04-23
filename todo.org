@@ -7,12 +7,15 @@
 ** DONE Setup prompt
 ** DONE setup pf
 ** KILL setup unbound
-** TODO Create operator user
+** DONE Create operator user
 ** DONE setup function to update crontab
 ** DONE setup bind & configure he.net
-** TODO certificates & sync script
+** DONE certificates & sync script
 ** TODO setup database and php admin
+** TODO setup dovecot
+** TODO setup spamd
 ** TODO basic smtp
+** TODO setup redis
 
 
 * Medium
