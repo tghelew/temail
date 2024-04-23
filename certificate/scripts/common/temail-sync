@@ -1,0 +1,88 @@
+#!/usr/bin/env ksh
+set -eo pipefail
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='certbot-auth'
+   local facility='user.info'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+   fi
+}
+# Check where am i
+__sync_controller_mode() {
+    _message 'Info' "Starting sync in Controller mode..."
+    local _cert_path=${RENEWED_LINEAGE:-$1}
+    local _config_dir=$(sed -n '/config-dir/ s/.*=\(.*\)$/\1/p' /var/certbot/etc/cli.ini)
+    local _target_server="eshub.ghelew.ch eshuc.ghelew.ch"
+
+    # local _cert_domains=${RENEWED_LINEAGE}
+    if [ -z "$_cert_path" ]; then
+        _message 'Info' 'Unknown certficate path trying to check modification date'
+        if [ -d $_config_dir ]; then
+            for p in $(find $_config_dir/live -type d -mindepth 1 -maxdepth 1 -ctime 1); do
+                _cert_path="${_cert_path}${_cert_path:+ }$p"
+            done
+        else
+            _message 'Error' 'Certbot configuration folder cannot be found.'
+        fi
+    fi
+
+    # creating sym links to /etc/ssl
+    for d in $_cert_path; do
+        ln -sf "$d" /etc/ssl/${d##*/}
+    done
+    # copy certs to target eshub/eshuc
+    #   check if user temail exist.
+     user info -e temail ||  _message 'Error' 'User: temail does exists in the system'
+     local _home=$(user info temail | grep dir | cut -f2)
+     for t in $_target_server; do
+         for p in $_cert_path; do
+             _message 'Info' "Copying certficate: $p to host: $t"
+             scp -q -i "${_home}"/.ssh/id_eshu.key\
+                 -F "${_home}"/.ssh/config\
+                 "$p"/*.pem temail@$t:~/certificates/"${p##*/}"
+         done
+         _message 'Info' "launching sync on host: $t"
+         # launch sync on target server
+         ssh -i "${_home}"/.ssh/id_eshu.key\
+             -F "${_home}"/.ssh/config\
+             temail@$t "doas /usr/local/bin/temail-sync"
+         done
+
+    _message 'Info' "Controller mode sync done!"
+}
+
+__sync_mail_mode() {
+    _message 'Info' "Starting sync in Mail mode..."
+    user info -e temail ||  _message 'Error' 'User: temail does exists in the system'
+    local _home=$(user info temail | grep dir | cut -f2)
+    local _domains="$(find $_home/certificates -type d -mindepth 1 -maxdepth 1)"
+    # check presence of temp folder
+    if [ -z "$_domains" ]; then
+        _message 'Info' 'No domains do sync... exiting'
+        return 0
+    fi
+    # copy file to /etc/ssl
+    for d in $_domains; do
+        _message 'Info' 'Moving domains certificate: ${d##*/} to /etc/ssl/'
+        cp -Rf "$d" /etc/ssl/
+    done
+    # clean temp folder
+    rm -rf "$_home"/certificates/*
+    _message 'Info' "Mail mode sync done!"
+}
+
+if type certbot 2>&1 >/dev/null; then
+    __sync_controller_mode "$@"
+else
+    __sync_mail_mode "$@"
+fi

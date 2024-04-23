@@ -1,0 +1,6 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about setting up [[https://eff-certbot.readthedocs.io/][cerbot]] for [[https://letsencrypt.org][Let's Encrypt]] certificates. I wanted to have a wildcard certificate for each of my domains and therefore could not use acme-client on OpenBSD.
+All certificates will be generated from the controller server and distributed to mail servers.

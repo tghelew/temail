@@ -1,0 +1,48 @@
+#!/usr/bin/env ksh
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='certbot-auth'
+   local facility='user.info'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+   fi
+}
+
+# Validate provided variables
+local _domain=$(expr "empty.${CERTBOT_DOMAIN:-$1}" : '.*\.\(.*\..*\)') _validation="${CERTBOT_VALIDATION:-$2}"
+local _dns="_acme-challenge.$_domain"
+local key=/var/named/keys/servers.key
+
+
+[ -z "$_domain" ]     && _message "Error" 'Domain name is not available!'
+[ -z "$_validation" ] && _message "Error" 'Validation string is not available!'
+
+
+type nsupdate 2>&1 >/dev/null || _message "Error" 'Cannot find nsupdate program!'
+[ -f "$key" ]                 || _message "Error" "TSIG key in path $key is not readable!"
+
+# Add a dns txt entry
+cat <<-EOF | nsupdate -lk "$key" >/dev/null 2>&1
+zone $_domain
+prereq nxrrset $_dns IN TXT
+update add $_dns 300 IN TXT $_validation
+send
+EOF
+
+
+if [ $? == 0 ] ;then
+    typeset -i  _wait=$((10 * 60))
+    _message "Info" "dns update succeded waiting $_wait seconds for the propagation."
+    sleep $_wait
+else
+    _message "Error" "dns update failed. Check dns log for additional details."
+fi
