@@ -68,3 +68,13 @@ cat > /etc/myname <<-EOF
     eshua.ghelew.ch
 EOF
 #+end_src
+
+** PTR
+For vm hosted in [[https://openbsd.amsterdam][openbsd.amsterdam]] there is a [[https://openbsd.amsterdam/ptr.html][procedure]] to request a change in the reverse dns name.
+From within the vm:
+#+begin_src sh
+ token4=$(ftp -MVo- http://ptr4.openbsd.amsterdam/token)
+ token6=$(ftp -6 -MVo- http://ptr6.openbsd.amsterdam/token)
+ [ -n $token4 ] && ftp -MVo- http://ptr4.openbsd.amsterdam/$token4/eshub.ghelew.ch
+ [ -n $token6 ] && ftp -6 -MVo- http://ptr6.openbsd.amsterdam/$token6/eshub.ghelew.ch
+#+end_src

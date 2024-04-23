@@ -9,6 +9,7 @@ _scriptdir="${0%/*}"
 typeset -U _type=""
 _syslog_conf=""
 _newsyslog_conf=""
+_syslog_flags=""
 
 cd "${_scriptdir}"
 
@@ -18,10 +19,12 @@ case "$1" in
     C*) # Controller
         _syslog_conf='controller_syslog.conf'
         _newsyslog_conf='controller_newsyslog.conf'
+        _syslog_flags="-S $(hostname)"
     ;;
     M*) # Mail Server
         _syslog_conf='mail_syslog.conf'
         _newsyslog_conf='mail_newsyslog.conf'
+        _syslog_flags="-hn"
     ;;
     *) # Error
         _message 'Error' 'Unknow type of deploy command'
@@ -48,7 +51,7 @@ for f in $(cat ./logfile.conf); do
         $__ chmod 640 "$f"
     fi
 done
-_message "1info" "Checking if logfile already exist done!"
+_message "1info" "Checking if logfiles already exist done!"
 
 if $(diff -qb "$_syslog_conf" /etc/syslog.conf >/dev/null 2>&1); then
     _message "1info" "Syslog.conf has not changed skipping"
@@ -66,6 +69,19 @@ else
     $__ cp -f ./"${_newsyslog_conf}" /etc/newsyslog.conf
 
 fi
+
+_message "1info" "Checking syslogd flags"
+_cflags=$($__ rcctl get syslogd flags)
+if [[ "$_cflags" == "$_syslog_flags" ]]; then
+    _message "2info" "syslogd flags did not change skipping"
+else
+    _message "2info" "syslogd flags changes updating"
+    $__ rcctl set syslogd flags "$_syslog_flags" >/dev/null 2>&1
+    $__ rcctl restart syslogd >/dev/null 2>&1
+fi
+
+
+_message "1info" "Checking syslogd flags done!"
 _message 'Info' 'SYSLOG setup completed!'
 
 cd "${_curpwd}"
