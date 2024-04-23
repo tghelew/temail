@@ -21,50 +21,6 @@ _target_script="/usr/local/bin/named-adblock"
 
 _run_checks "diff"
 
-
-__apply_changes() {
-
-    local mtab="${1:-1}"
-    local check="${2}"
-    local source="${3}"
-    local target="${4}"
-
-    local state=""
-    local file=""
-    local bck=$IFS
-    local target_file
-
-    local IFS=';'
-    for c in $check; do
-        state=$(echo "$c" | cut -d @ -f 1)
-        file=$(echo "$c" | cut -d @ -f 2)
-        IFS=$bck
-        case $state in
-            S) _message "$(($mtab+ 1))info" "file: $file has not changed... skipping"
-            ;;
-            D) _message "$(($mtab+ 1))info" "file: $file has changed... deploying"
-               target_file="${target}/$file"
-               $__ mkdir -p "${target_file%/*}"
-               $__ cp -Rf "$source/$file" "$target_file"
-            ;;
-            E) _message "$(($mtab+ 1))info" "file: $file is suspicious double checking!"
-               if [ -f "$source/${file}" ]; then
-                   _message "$(($mtab+ 2))info" "file: $file exist locally copying it!"
-                   target_file="${target}/$file"
-                   $__ mkdir -p "${target_file%/*}"
-                   $__ cp -Rf "$source/$file" "$target_file"
-               else
-                   _message "$(($mtab+ 2))info" "file: $file doesn't exist locally skipping"
-               fi
-            ;;
-            X) _message "$(($mtab+ 1))Warnig" "Unable to read dir: $file check that it exists or is readable."
-            ;;
-            *) _message "$(($mtab+ 1))Warnig" "Something happen during parsing of the command."
-            ;;
-        esac
-    done
-}
-
 _deploy_common() {
     _message '1info' 'Deploying/Updating common'
     # check if file has changed:
@@ -74,7 +30,7 @@ _deploy_common() {
     $__ mkdir -p "${_target_dir}"/{keys,etc,zones,run}
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}/etc" -f "*.conf")
-    __apply_changes 1 "$check" "$source_dir" "${_target_dir}/etc"
+    _apply_changes 1 "$check" "$source_dir" "${_target_dir}/etc"
 
     _message '2info' 'Checking rndc.conf...'
     local _rndc_target_conf=/etc/rndc.conf
@@ -94,7 +50,7 @@ EOF
 
     source_dir=./keys
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}/keys" -f "*.key")
-    __apply_changes 1 "$check" "$source_dir" "${_target_dir}/keys"
+    _apply_changes 1 "$check" "$source_dir" "${_target_dir}/keys"
 
     $__ chown root:_bind "${_target_dir}"
     $__ chmod 775 "${_target_dir}"
@@ -104,7 +60,7 @@ EOF
 
     source_dir=./zones/common
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}/zones" -f "*.zone")
-    __apply_changes 1 "$check" "$source_dir" "${_target_dir}/zones"
+    _apply_changes 1 "$check" "$source_dir" "${_target_dir}/zones"
 
     _message '2info' 'Deploying/Updating update script'
 
@@ -112,7 +68,7 @@ EOF
     _target_dir="/usr/local/bin"
     local target_file='update-named-root'
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "$target_file*")
-    __apply_changes 2 "$check" "$source_dir" "$_target_dir"
+    _apply_changes 2 "$check" "$source_dir" "$_target_dir"
     $__ chown root:bin /usr/local/bin/"$target_file"
 
     # crontab
@@ -139,7 +95,7 @@ _deploy_custom() {
     cp -f "$source_dir"/"$custom_file" "$source_dir"/"$target_file"
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "$target_file")
-    __apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    _apply_changes 1 "$check" "$source_dir" "$_target_dir"
     $__ chown root:_bind $_target_dir/$target_file
     $__ chmod 640 $_target_dir/$target_file
 
@@ -155,7 +111,7 @@ _deploy_primary() {
     _target_dir="/var/named/zones"
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.zone")
-    __apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    _apply_changes 1 "$check" "$source_dir" "$_target_dir"
 
     _message '1info' 'Deploying/Updating primary zones done!'
 }
@@ -168,7 +124,7 @@ _deploy_adzone() {
     _target_dir="/var/named/zones"
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.zone")
-    __apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    _apply_changes 1 "$check" "$source_dir" "$_target_dir"
 
     _message '2info' 'Deploying/Updating update script'
 
@@ -176,7 +132,7 @@ _deploy_adzone() {
     _target_dir="/usr/local/bin"
     local target_file='update-named-adblock'
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "$target_file*")
-    __apply_changes 2 "$check" "$source_dir" "$_target_dir"
+    _apply_changes 2 "$check" "$source_dir" "$_target_dir"
     $__ chown root:bin /usr/local/bin/"$target_file"
 
     # crontab
@@ -198,7 +154,7 @@ _deploy_resolv() {
     _target_dir="/etc"
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.conf")
-    __apply_changes 1 "$check" "$source_dir" "${_target_dir}"
+    _apply_changes 1 "$check" "$source_dir" "${_target_dir}"
 
     $__ chown root:wheel "${_target_dir}/resolv.conf"
     $__ chmod 644 "${_target_dir}/resolv.conf"

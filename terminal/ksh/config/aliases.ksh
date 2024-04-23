@@ -66,6 +66,7 @@ function mkdcd {
 
 
 function kman {
+  #FIXME: not working in bsd
   PAGER="less -g -I -s '+/^       "$1"'" man ksh;
 }
 

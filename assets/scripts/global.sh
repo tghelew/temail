@@ -199,3 +199,51 @@ EOF
     print "$output"
 
 }
+
+# Following the execution of `_check_diff` apply changes
+# mtab: the number of tab to apply to messages
+# check: the output of the execution of check diff
+# source: the source directory
+# target: the target directory
+_apply_changes() {
+
+    local mtab="${1:-1}"
+    local check="${2}"
+    local source="${3}"
+    local target="${4}"
+
+    local state=""
+    local file=""
+    local bck=$IFS
+    local target_file
+
+    local IFS=';'
+    for c in $check; do
+        state=$(echo "$c" | cut -d @ -f 1)
+        file=$(echo "$c" | cut -d @ -f 2)
+        IFS=$bck
+        case $state in
+            S) _message "$(($mtab+ 1))info" "file: $file has not changed... skipping"
+            ;;
+            D) _message "$(($mtab+ 1))info" "file: $file has changed... deploying"
+               target_file="${target}/$file"
+               $__ mkdir -p "${target_file%/*}"
+               $__ cp -Rf "$source/$file" "$target_file"
+            ;;
+            E) _message "$(($mtab+ 1))info" "file: $file is suspicious double checking!"
+               if [ -f "$source/${file}" ]; then
+                   _message "$(($mtab+ 2))info" "file: $file exist locally copying it!"
+                   target_file="${target}/$file"
+                   $__ mkdir -p "${target_file%/*}"
+                   $__ cp -Rf "$source/$file" "$target_file"
+               else
+                   _message "$(($mtab+ 2))info" "file: $file doesn't exist locally skipping"
+               fi
+            ;;
+            X) _message "$(($mtab+ 1))Warnig" "Unable to read dir: $file check that it exists or is readable."
+            ;;
+            *) _message "$(($mtab+ 1))Warnig" "Something happen during parsing of the command."
+            ;;
+        esac
+    done
+}

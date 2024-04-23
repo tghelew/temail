@@ -66,6 +66,25 @@ __deploy_doas() {
 __deploy_folder() {
    _message '1info' 'Deploying folder config'
    [ ! -s $_folderfile ] && _message '2info' 'folder configuration is empty skipping' && return 0
+
+    typeset -l  name=""  owner=""  group="" mode="" link=""
+    while read -ru name owner group mode link; do
+       [ "x$name" == "x"  ]       && _message '2error' "folder's name cannot be empty"
+       [ "x$owner" == "x"  ]       && _message '2error' "folder's owner cannot be empty"
+       [ "x$group" == "x"  ]       && _message '2error' "folder's group cannot be empty"
+       [ "x$mode" == "x"  ]       && _message '2error' "folder's mode cannot be empty"
+
+       _message '2Info' "Maybe creating folder $name"
+       $__ mkdir -p "$name"
+       $__ chmod "$mode" "$name"
+       $__ chown $owner:$group "$name"
+
+       if [[ ! "x$link" == "x" && "$link" != "no" ]]; then
+           _message '2Info' "Creating symlink $link from $name"
+           $__ ln -sf $name $link
+       fi
+    done < $_folderfile
+
    _message '1info' 'Deploying folder config done'
 }
 
@@ -163,20 +182,20 @@ _message "info" 'Initializing/Updating user...'
 
 # Get user config
 sed -E -e '/^#--Start[[:space:]]+Users--#+$/,/^#--End[[:space:]]+Users--#+$/!d' \
-       -e '/^#/d' \
+       -e '/#/d' \
        $_userconf > $_userfile
 # Get folder config
 sed -E -e '/^#--Start[[:space:]]+Folder--#+$/,/^#--End[[:space:]]+Folder--#+$/!d' \
-       -e '/^#/d' \
+       -e '/#/d' \
        $_userconf > $_folderfile
 # Get doas config
 sed -E -e '/^#--Start[[:space:]]+DOAS--#+$/,/^#--End[[:space:]]+DOAS--#+$/!d' \
-       -e '/^#/d' \
+       -e '/#/d' \
        $_userconf > $_doasfile
 
 # Get ssh config
 sed -E -e '/^#--Start[[:space:]]+Ssh--#+$/,/^#--End[[:space:]]+Ssh--#+$/!d' \
-       -e '/^#/d' \
+       -e '/#/d' \
        $_userconf > $_sshfile
 
 # Create users & group
@@ -184,7 +203,7 @@ __deploy_user
 # Create folders
 __deploy_folder
 # Update doas
-# __deploy_doas
+__deploy_doas
 
 _message 'Info' 'USER setup completed!'
 
