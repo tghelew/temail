@@ -1,0 +1,66 @@
+#+TITLE: Readme
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://www.postgresql.org][PostgreSQL]] which the database I'll use to store my virtual everything (user, domains, alias, quotas,etc...). By default this server is closed to the world. Only my server are allowed to connect to it. Each mail server will have his own read-only instance of postgresql and they will sync with the controller.
+
+** Stand By (Replication)
+The primary database server is my controller where all the data related to my mail account will be stored. Thanks to replication all data will be synchronized to my mail server read-only (Stand By) server. Following [[https://www.postgresql.org/docs/current/warm-standby.html#STREAMING-REPLICATION][Postgresql]] documentation I configured the replication as follows.
+- Create replication user on the primary/controller db.
+   /Note that I am not using password as my mail server are the only one allowed to connect to the controller db/
+#+begin_src sh
+psql -c "CREATE USER replicator WITH REPLICATION"
+#+end_src
+- Update ~$PGDATA/postgresql.conf~ on the controller with the following
+  #+BEGIN_EXAMPLE
+    listen_addresses = '*'		# what IP address(es) to listen on;
+
+    wal_level = replica			# minimal, replica, or logical
+                        # (change requires restart)
+    fsync = on				# flush data to disk for crash safety
+                        # (turning this off can cause
+                        # unrecoverable data corruption)
+    synchronous_commit = on		# synchronization level;
+                        # off, local, remote_write, remote_apply, or on
+    wal_sync_method = fsync		# the default is the first option
+                        # supported by the operating system:
+                        #   open_datasync
+                        #   fdatasync (default on Linux and FreeBSD)
+                        #   fsync
+                        #   fsync_writethrough
+                        #   open_sync
+    full_page_writes = on			# recover from partial page writes
+    wal_log_hints = off			# also do full page writes of non-critical updates
+                        # (change requires restart)
+    wal_compression = off			# enables compression of full-page writes;
+                        # off, pglz, lz4, zstd, or on
+
+    # - Checkpoints -
+    max_wal_size = 1GB
+    min_wal_size = 300MB
+
+  #+END_EXAMPLE
+
+- Create replication slot on the controller
+  #+begin_src sh
+    psql -c "SELECT * FROM pg_create_physical_replication_slot('eshub_slot');"
+    psql -c "SELECT * FROM pg_create_physical_replication_slot('eshuc_slot');"
+  #+end_src
+
+- Restart the controller database
+  #+begin_src sh
+    doas rcctl restart postgresql
+  #+end_src
+
+- Create a base backup on the mail (standby) servers.
+  /Note: make sure ~$PGDATA~ is empty prior to execute this command
+  #+begin_src sh
+    export PGDATA=/var/postgresql/data
+    pg_basebackup -h eshua.ghelew.ch -U replicator -p 5432 -D $PGDATA -S 'eshub_slot' -Fp -Xs -P -R -w
+    pg_basebackup -h eshua.ghelew.ch -U replicator -p 5432 -D $PGDATA -S 'eshuc_slot' -Fp -Xs -P -R -w
+  #+end_src
+
+- Restart the standby (mail) database
+  #+begin_src sh
+    doas rcctl restart postgresql
+  #+end_src

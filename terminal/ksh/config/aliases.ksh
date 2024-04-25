@@ -9,8 +9,8 @@ alias c=clear
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
-alias mkdir='mkdir -pv'
-alias get='ftp -Cnm '
+alias mkdir='mkdir -p'
+alias get='ftp -MVCnm '
 
 # alias path='echo -e ${PATH//:/\\n}'
 # alias ports='netstat -tulanp'
@@ -19,10 +19,8 @@ alias reboot='doas reboot'
 
 
 alias _='doas'
-alias rdnc='doas rndc '
-alias rdnc='doas rndc '
-# I want to retain my prompt and functions
-alias _r="doas -u root $SHELL -l"
+alias rndc='doas rdnc'
+alias rndc='doas rdnc'
 
 
 if type colorls 2>&1 >/dev/null; then
@@ -57,6 +55,8 @@ alias dud='du -d 1'
 alias topc='top -o cpu'
 alias topm='top -o vsize'
 
+alias psql='psql -U _postgresql -d postgres '
+
 # History
 
 # Makes a directory and changes to it.
@@ -67,7 +67,7 @@ function mkdcd {
 
 function kman {
   #FIXME: not working in bsd
-  PAGER="less -g -I -s '+/^       "$1"'" man ksh;
+  PAGER="less -g -I -s -p'$1'" man ksh;
 }
 
 function alval {

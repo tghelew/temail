@@ -21,8 +21,8 @@
 * Medium
 ** TODO Add tmux plugins resurrect
 ** TODO setup dnssec bind
-** TODO configure syslog to send logs to controller on mail servers
-** TODO move domain ghelew.net to slave
+** DONE configure syslog to send logs to controller on mail servers
+** DONE move domain ghelew.net to slave
 ** KILL Setup crontab to compress nsd backup config (monthly)
 
 
@@ -30,3 +30,4 @@
 ** TODO Setup history command using fzf
 ** TODO Enable dns over tls in bind
 ** TODO setup dnstap to view dns streams
+** TODO Enable private CA for internal communication

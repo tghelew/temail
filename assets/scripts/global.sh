@@ -247,3 +247,59 @@ _apply_changes() {
         esac
     done
 }
+
+# Return a string command that cleanup display and cleanup a file
+# mtab: the number of tab to apply to messages
+# files: the files to show and clean up
+_show_clean () {
+    typeset -i  mtab=${1:-1}
+    shift
+    local files="$@"
+    local output=""
+    local l=""
+    local pattern="\t%s\n"
+    [ -z "$files" ] && return 0
+    if [[ $mtab > 1 ]] ; then
+        mtab=$(( $mtab - 1 ))
+        for _ in $(seq 1 $mtab); do
+            pattern="\t$pattern"
+        done
+    fi
+    for f in $files; do
+        [ ! -f "$f" ] && continue
+        output="${output}${output:+;}"$(cat <<-EOF
+if [ -f $f ]; then
+    while read -ru l; do
+        printf "$pattern" "$l"
+    done < $f
+    rm -f $f
+fi
+EOF
+                                        )
+    done
+    echo "$output"
+}
+
+# Display content of files with appropriate tabs
+# mtab: the number of tab to apply to messages
+# files: the files to show and clean up
+_show () {
+    typeset -i  mtab=${1:-1}
+    shift
+    local files="$@"
+    local l=""
+    local pattern="\t%s\n"
+    [ -z "$files" ] && return 0
+    if [[ $mtab > 1 ]] ; then
+        mtab=$(( $mtab - 1 ))
+        for _ in $(seq 1 $mtab); do
+            pattern="\t$pattern"
+        done
+    fi
+    for f in $files; do
+        [ ! -f "$f" ] && continue
+        while read -ru l; do
+            printf "$pattern" "$l"
+        done < $f
+    done
+}
