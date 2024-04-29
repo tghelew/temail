@@ -250,7 +250,7 @@ _clean () {
     for f in $files; do
         [[ ! -f "$f" && ! -d "$f" ]] && continue
         output="${output}${output:+;}"$(cat <<-EOF
-[[ -f $f  || -d $f ]] && rm -rf $f;
+[[ -f $f  || -d $f ]] && rm -rf $f
 EOF
               )
     done

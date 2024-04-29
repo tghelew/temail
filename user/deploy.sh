@@ -13,21 +13,13 @@ _doasfile=$(mktemp /tmp/temail.XXXXXXX.user)
 _folderfile=$(mktemp /tmp/temail.XXXXXXX.user)
 _sshfile=$(mktemp /tmp/temail.XXXXXXX.user)
 _sshknown=$(mktemp /tmp/temail.XXXXXXX.user)
-_clean=$(cat <<-EOF
-  [ -f $_userfile ] && rm -f $_userfile
-  [ -f $_doasfile ] && rm -f $_doasfile
-  [ -f $_folderfile ] && rm -f $_folderfile
-  [ -f $_sshfile ] && rm -f $_sshfile
-  [ -f $_sshknown ] && rm -f $_sshknown
-EOF
-)
 
-trap "$_clean" ERR EXIT
 
 cd "${_scriptdir}"
 
-
 . ../assets/scripts/global.sh
+
+trap "$(_clean $_userfile $_doasfile $_folderfile $_sshfile $_sshknown)" ERR EXIT
 
 case "$1" in
     C*) # Controller
@@ -61,6 +53,14 @@ __deploy_doas() {
    $__ tee -a /etc/doas.conf >/dev/null  < $_doasfile
    $__ doas -C /etc/doas.conf
    _message '1info' 'Deploying doas config done'
+}
+
+__deploy_login_conf() {
+   _message '1info' 'Deploying login.conf.d ...'
+   local source_dir="./login.conf.d" target_dir="/etc/login.conf.d" check=""
+    check=$(_check_diff -s "$source_dir" -t "${target_dir}" -f "*")
+    _apply_changes 1 "$check" "$source_dir" "${target_dir}"
+   _message '1info' 'Deploying login.conf.d done!'
 }
 
 __deploy_folder() {
@@ -98,17 +98,19 @@ __deploy_user() {
         sed -i '/^#/d' "$_sshknown"
     fi
 
-    typeset -l  name=""  uid=""  gid="" agroup="" group=""  shell=""  home="" ssh=""
+    typeset -l  name=""  uid=""  gid="" class="" agroup="" group=""  shell=""  home="" ssh=""
     local comment=""
-   while read -ru name uid gid group shell home ssh comment; do
-       [ "x$name" == "x"  ]       && _message '2error' "User's name cannot be empty"
-       [ "x$uid" == "x"   ]       && _message '2error' "User's uid cannot be empty"
-       [ "x$gid" == "x"   ]       && _message '2error' "User's gid cannot be empty"
+   while read -ru name uid gid class group shell home ssh comment; do
+       [ "x$name"  == "x" ]       && _message '2error' "User's name cannot be empty"
+       [ "x$uid"   == "x" ]       && _message '2error' "User's uid cannot be empty"
+       [ "x$gid"   == "x" ]       && _message '2error' "User's gid cannot be empty"
+       [ "x$class" == "x" ]       && _message '2error' "User's class cannot be empty"
        [ "x$group" == "x" ]       && _message '2error' "User's group cannot be empty"
        [ "x$shell" == "x" ]       && _message '2error' "User's shell cannot be empty"
-       [ "x$home" == "x"  ]       && _message '2error' "User's home cannot be empty"
-       [ "x$ssh" == "x"   ]       && _message '2error' "User's ssh cannot be empty"
+       [ "x$home"  == "x" ]       && _message '2error' "User's home cannot be empty"
+       [ "x$ssh"   == "x" ]       && _message '2error' "User's ssh cannot be empty"
        $(type $shell > /dev/null) || _message '2error' "User's shell must be a valid command"
+       [ "$class" == "no" ] && class=""
 
        agroup=""
        for g in $(echo "$group" | tr ',' ' '); do
@@ -124,24 +126,24 @@ __deploy_user() {
 
            local cuserinfo="$(grep $name /etc/passwd | cut -d ':' -f5,7)"
            local cagroup="$(id -Gn $name | tr ' ' '\n' | grep -v $(id -gn $name) | tr '\n' ',')"
+           local cclass="$(user info $name | grep class | cut -f2)"
            local nuserinfo="$comment:$shell"
 
-           if [[ "$cuserinfo" != "$nuserinfo" || "$agroup${agroup:+,}" != "$cagroup" ]] then
-               # echo "agroup:$agroup${agroup:+,}; cuserinfo: $cuserinfo"
-               # echo "cagroup:$cagroup; nuserinfo: $nuserinfo"
-               _message '3info' "User's setting has changed updating only: group, shell, and comment"
-               $__ user mod -s $shell -c "$comment" -S $agroup -- $name
+           if [[ "$cuserinfo" != "$nuserinfo" \
+               || "$agroup${agroup:+,}" != "$cagroup"  \
+               || "x$cclass" != "x$class" \
+               ]]; then
+               _message '3info' "User's setting has changed updating only: group, shell, class, and comment"
+               $__ user mod -s $shell -c "$comment" -L "$class" ${agroup:+-S $agroup} $name
            else
                _message '3info' "User's setting has not changed: group, shell, or comment"
            fi
        else
            _message '2info' "User: $name does not exists... Creating"
           $(group info -e $gid) || $__ group add -g $gid $name > /dev/null
-          if [ "x$agroup" == "x" ]; then
-            $__ user add -m -u $uid -g $gid -d "$home" -s $shell -c "$comment" -- $name > /dev/null
-          else
-            $__ user add -m -u $uid -g $gid -d "$home" -s $shell -G $agroup  -c "$comment" -- $name > /dev/null
-          fi
+
+          $__ user add -m -u $uid -g $gid -L "$class" -d "$home" \
+              -s $shell ${agroup:+-G $agroup} -c "$comment" -- $name > /dev/null
        fi
 
     if [ "$ssh" == "yes" ]; then
@@ -181,27 +183,23 @@ _message "info" 'Initializing/Updating user...'
 [ -f ./$_userconf ] || _message "1Error" "file: $_userconf does not exist!"
 
 # Get user config
-sed -E -e '/^#--Start[[:space:]]+Users--#+$/,/^#--End[[:space:]]+Users--#+$/!d' \
-       -e '/#/d' \
-       $_userconf > $_userfile
+_read_conf $_userconf $_userfile 'Users'
 # Get folder config
-sed -E -e '/^#--Start[[:space:]]+Folder--#+$/,/^#--End[[:space:]]+Folder--#+$/!d' \
-       -e '/#/d' \
-       $_userconf > $_folderfile
+_read_conf $_userconf $_folderfile 'Folder'
 # Get doas config
-sed -E -e '/^#--Start[[:space:]]+DOAS--#+$/,/^#--End[[:space:]]+DOAS--#+$/!d' \
-       -e '/#/d' \
-       $_userconf > $_doasfile
-
+_read_conf $_userconf $_doasfile 'DOAS'
 # Get ssh config
-sed -E -e '/^#--Start[[:space:]]+Ssh--#+$/,/^#--End[[:space:]]+Ssh--#+$/!d' \
-       -e '/#/d' \
-       $_userconf > $_sshfile
+_read_conf $_userconf $_sshfile 'Ssh'
+
+# deploy login.conf
+__deploy_login_conf
 
 # Create users & group
 __deploy_user
+
 # Create folders
 __deploy_folder
+
 # Update doas
 __deploy_doas
 
