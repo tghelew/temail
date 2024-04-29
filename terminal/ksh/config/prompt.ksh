@@ -59,7 +59,7 @@ function _prompt_pwd {
 function _prompt_show {
     case "${TERM:-dumb}" in
         xterm*|screen*|eterm*|rxvt*)
-            print $(_color 'blue' "!!\!")$(_color 'default' "  ")$(_prompt_pwd)"\n"$(_prompt_chars $1)" "
+            print $(_color 'blue' "\u")$(_color 'default' "  ")$(_prompt_pwd)"\n"$(_prompt_chars $1)" "
         ;;
         *)
             print '\w \$ '

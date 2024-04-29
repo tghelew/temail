@@ -6,58 +6,69 @@ set -euo pipefail
 
 _curpwd="${PWD}"
 _scriptdir="${0%/*}"
+_source_dir=""
+_target_dir=""
+_check=""
 _packages=./packages.conf
 
 cd "${_scriptdir}"
 
 . ../assets/scripts/global.sh
 
-_add_packages "${_packages}"
 
 _run_checks "bash mkdir cd rm"
 
 # tmux
-_message "info" 'Initializing/Updating tmux...'
-_isnew=y
-_target="$HOME/tmux"
-
-
+_message "info" 'Initializing/Updating terminal...'
+_add_packages "${_packages}"
+_message "1info" 'Initializing/Updating tmux...'
 mkdir -p ~/.local/share/tmux
+_source_dir="./tmux"
+_target_dir="$HOME/tmux"
 
-if [[ -d "${_target}" ]]; then
-    _message 'info' 'Tmux is already configured, updating...'
-    _isnew=n
-fi
-if [[ $_isnew == "n" ]]; then
-    rm -rf "${_target}/"
-    cp -Rfv ./tmux/. "${_target}"/
-else
-    mkdir -p "${_target}"
-    cp -Rfpv ./tmux/. "${_target}"/
-fi
-ln -sf "${_target}/tmux.conf" ~/.tmux.conf
+check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
+_apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
 
-_message 'Info' 'Tmux setup completed!'
+ln -sf "${_target_dir}/tmux.conf" ~/.tmux.conf
+
+_message '1Info' 'Tmux setup completed!'
 
 
 # ksh
-_message "info" 'Initializing/Updating ksh...'
+_message "1info" 'Initializing/Updating ksh...'
 $__ mkdir -p /etc/ksh
 
-_target=/etc/ksh
+_target_dir=/etc/ksh
+_source_dir="./ksh/config"
+check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
+_apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
+$__ chown -RL root:wheel "${_target_dir}"
 
-$__ cp -Rfpv ksh/config/. "${_target}"/
-$__ cp -fpv ksh/ksh.kshrc /etc/
-$__ cp -fpv ksh/rprofile /root/.profile
+_target_dir=/etc
+_source_dir="./ksh"
+check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "ksh.kshrc")
+_apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
+$__ chown -RL root:wheel "${_target_dir}/ksh.kshrc"
 
-$__ chown -RL root:wheel /etc/ksh.kshrc "${_target}" /root/.profile
+_target_dir=/root
+_source_dir="./ksh"
+check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "rprofile")
+_apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
+$__ chown -RL root:wheel "${_target_dir}/rprofile"
+$__ test  -f "${_target_dir}/.profile" && $__ rm -f "${_target_dir}/.profile"
+$__ test  -h "${_target_dir}/.profile"  || $__ ln -sf "${_target_dir}/rprofile" "${_target_dir}/.profile"
 
-_target=$HOME
-cp -fpv ksh/profile $_target/.profile
+_target_dir=$HOME
+_source_dir="./ksh"
+check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "profile")
+_apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
 
-. $_target/.profile
+[ -f "${_target_dir}/.profile" ] && rm -f "${_target_dir}/.profile"
+[ -h "${_target_dir}/.profile" ] || $__ ln -sf "${_target_dir}/profile" "${_target_dir}/.profile"
+$__ chown -RL $USER:$USER "${_target_dir}/.profile"
 
-_message "info" 'ksh setup completed!'
+_message "1info" 'ksh setup completed!'
 
+_message "info" 'Initializing/Updating terminal done!'
 
 cd "${_curpwd}"
