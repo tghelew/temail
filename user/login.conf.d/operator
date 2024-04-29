@@ -1,0 +1,7 @@
+operator:\
+        :datasize-cur=1536M:\
+        :datasize-max=infinity:\
+        :ignorenologin:\
+        :requirehome@:\
+        :login-tries=3:\
+        :tc=default:
