@@ -56,26 +56,19 @@ _run_checks () {
 _add_packages () {
     if [ -f "${1}" ]; then
         local _tmp=$(mktemp /tmp/temail.XXXXXXX.package)
-        local l=""
-        local _clean=$(cat <<-EOF
-            if [ -f ${_tmp} ]; then
-            while read -ru l; do
-                printf "\t\t%s\n" "$l"
-            done < ${_tmp}
-            rm -f ${_tmp}
-            fi
-EOF
-                    )
-
-        trap "$_clean" ERR EXIT
+        trap "$(_show_clean 2 $_tmp)" ERR EXIT
 
         _message "1Info" "Installing additional package(s)..."
          $__ pkg_add -Vvl "${1}" > "${_tmp}" 2>&1
-         while read -ru l ; do
-             printf "\t\t%s\n" "$l"
-         done < ${_tmp}
+         [ -f ${_tmp} ] && {
+             while read -ru l ; do
+                 printf "\t\t%s\n" "$l"
+             done < ${_tmp}
+             rm -f ${_tmp}
+         }
+
         _message "1Info" "Done: Installing additional package(s)"
-        [ -f ${_tmp} ] && rm -f ${_tmp}
+
 
     else
         _message "1Error" "file ${1} cannot be found!"
@@ -248,6 +241,46 @@ _apply_changes() {
     done
 }
 
+# Return a string command that cleanup a file or folder
+# files: the files to show and clean up
+_clean () {
+    local files="$@"
+    local output=""
+    [ -z "$files" ] && return 0
+    for f in $files; do
+        [[ ! -f "$f" && ! -d "$f" ]] && continue
+        output="${output}${output:+;}"$(cat <<-EOF
+[[ -f $f  || -d $f ]] && rm -rf $f;
+EOF
+              )
+    done
+    echo "$output"
+}
+
+# Display content of files with appropriate tabs
+# mtab: the number of tab to apply to messages
+# files: the files to show and clean up
+_show () {
+    typeset -i  mtab=${1:-1}
+    shift
+    local files="$@"
+    local l=""
+    local pattern="\t%s\n"
+    [ -z "$files" ] && return 0
+    if [[ $mtab > 1 ]] ; then
+        mtab=$(( $mtab - 1 ))
+        for _ in $(seq 1 $mtab); do
+            pattern="\t$pattern"
+        done
+    fi
+    for f in $files; do
+        [ ! -f "$f" ] && continue
+        while read -ru l; do
+            printf "$pattern" "$l"
+        done < $f
+    done
+}
+
 # Return a string command that cleanup display and cleanup a file
 # mtab: the number of tab to apply to messages
 # files: the files to show and clean up
@@ -280,26 +313,21 @@ EOF
     echo "$output"
 }
 
-# Display content of files with appropriate tabs
-# mtab: the number of tab to apply to messages
-# files: the files to show and clean up
-_show () {
-    typeset -i  mtab=${1:-1}
-    shift
-    local files="$@"
-    local l=""
-    local pattern="\t%s\n"
-    [ -z "$files" ] && return 0
-    if [[ $mtab > 1 ]] ; then
-        mtab=$(( $mtab - 1 ))
-        for _ in $(seq 1 $mtab); do
-            pattern="\t$pattern"
-        done
-    fi
-    for f in $files; do
-        [ ! -f "$f" ] && continue
-        while read -ru l; do
-            printf "$pattern" "$l"
-        done < $f
-    done
+
+# Read a space/tab separated configuration section from file
+# conf: configuration file
+# destination: path to file where configuration section sould be saved
+# Section: the name of the section
+#  Section are enclosed by:
+#   #--Start <section>--#[...]#
+#   #--End <section>--#[...]#
+_read_conf() {
+    local conf="$1" dest="$2"
+    shift 2
+    local section="$@"
+    [ -f $conf ] || _message "1Error" "file: $conf does not exist!"
+
+    sed -E -e '/^#--Start[[:space:]]+'"$section"'--#+$/,/^#--End[[:space:]]+'"$section"'--#+$/!d' \
+        -e '/#/d' \
+        $conf > $dest
 }

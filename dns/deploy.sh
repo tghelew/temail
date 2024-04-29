@@ -167,26 +167,17 @@ _deploy_resolv() {
 
 _deploy_checkconf() {
     local _tmp=$(mktemp /tmp/temail.XXXXXXX.dns)
-    local l=""
-    local _clean=$(cat <<-EOF
-if [ -f ${_tmp} ]; then
-  while read -ru l ; do
-    printf "\t\t%s\n" "$l"
-  done < ${_tmp}
-  rm -f ${_tmp}
-fi
-EOF
-                   )
-
-    trap "$_clean" ERR EXIT
+    trap "$(_show_clean 2 $_tmp)" ERR EXIT
 
     _message "1Info" "Checking installed configuration..."
      $__ named-checkconf -t /var/named etc/named.conf > "${_tmp}" 2>&1
-     while read -ru l ; do
-         printf "\t\t%s\n" "$l"
-     done < ${_tmp}
+     [ -f ${_tmp} ] && {
+         while read -ru l ; do
+             printf "\t\t%s\n" "$l"
+         done < ${_tmp}
+         rm -f ${_tmp}
+     }
     _message "1Info" "Checking installed configuration done"
-    [ -f ${_tmp} ] && rm -f ${_tmp}
 }
 
 _add_packages ./packages.conf

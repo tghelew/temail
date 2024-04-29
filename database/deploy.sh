@@ -88,7 +88,7 @@ __deploy_custom() {
 
     _target_dir=/var/postgresql/data
 
-    _message "1info" 'Deploying common configurations...'
+    _message "1info" 'Deploying custom configurations...'
     check=$(_check_diff -s "$_custom_dir" -t "${_target_dir}" -f "*")
     _apply_changes 1 "$check" "$_custom_dir" "${_target_dir}"
 
@@ -96,7 +96,7 @@ __deploy_custom() {
 
     $__ chown -R _postgresql:_postgresql "${_target_dir}"
 
-    _message "1info" 'Deploying common configurations done!'
+    _message "1info" 'Deploying custom configurations done!'
 }
 
 _message "info" 'Initializing/Updating Postgresql ...'
@@ -105,9 +105,10 @@ _add_packages "${_packages}"
 
 case "$1" in
     C*) # Controller
+        __deploy_common
         __deploy_initdb
-        __deploy_custom
         _custom_dir=./controller
+        __deploy_custom
     ;;
     M*) # Mail Server
         __deploy_common

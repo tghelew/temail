@@ -52,7 +52,7 @@ function _deploy_certbot {
 
     cat <<-EOF | _update_crontab 'certbot' 'root'
     #-----------------------------------certbot Start------------------------------------------------------------
-    0~30     4      */5       *       *       -ns  /usr/loca/bin/certbot renew -c /var/certbot/etc/cli.ini -q
+    0~30     4      */5       *       *       -ns  /usr/local/bin/certbot renew -c /var/certbot/etc/cli.ini -q
     #-----------------------------------certbot End--------------------------------------------------------------
 EOF
 
