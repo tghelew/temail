@@ -54,18 +54,18 @@ _target_dir=/root
 _source_dir="./ksh"
 check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "rprofile")
 _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
-$__ chown -RL root:wheel "${_target_dir}/rprofile"
+$__ chown root:wheel "${_target_dir}/rprofile"
 $__ test  -f "${_target_dir}/.profile" && $__ rm -f "${_target_dir}/.profile"
-$__ test  -h "${_target_dir}/.profile"  || $__ ln -sf "${_target_dir}/rprofile" "${_target_dir}/.profile"
+$__ test  -h "${_target_dir}/.profile"  || $__ ln -f "${_target_dir}/rprofile" "${_target_dir}/.profile"
 
 _target_dir=$HOME
 _source_dir="./ksh"
 check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "profile")
 _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
 
+$__ chown  $USER:$USER "${_target_dir}/profile"
 [ -f "${_target_dir}/.profile" ] && rm -f "${_target_dir}/.profile"
-[ -h "${_target_dir}/.profile" ] || $__ ln -sf "${_target_dir}/profile" "${_target_dir}/.profile"
-$__ chown -RL $USER:$USER "${_target_dir}/.profile"
+[ -h "${_target_dir}/.profile" ] || ln -f "${_target_dir}/profile" "${_target_dir}/.profile"
 
 _message "1info" 'ksh setup completed!'
 

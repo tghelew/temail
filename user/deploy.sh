@@ -144,6 +144,9 @@ __deploy_user() {
 
           $__ user add -m -u $uid -g $gid -L "$class" -d "$home" \
               -s $shell ${agroup:+-G $agroup} -c "$comment" -- $name > /dev/null
+        # See master.passwd(5)
+        [[ "$shell" == "*sh" ]] && $__ user mod -p '*************' $name
+
        fi
 
     if [ "$ssh" == "yes" ]; then
