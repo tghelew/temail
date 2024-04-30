@@ -1,4 +1,4 @@
-#+TITLE: Readme
+#+TITLE: Syslog Configuration
 #+author: Thierry Ghelew
 
 * Summary

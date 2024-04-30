@@ -52,3 +52,12 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 *** Setup
 
 1. [[./init/README.org][OpenBSD Installation]]
+2. [[./terminal/README.org][Terminal Setting]]
+3. [[./user/README.org][Users Setting]]
+4. [[./syslog/README.org][Syslog Setting]]
+5. [[./pf/README.org][PF Setting]]
+6. [[./dns/README.org][BIND Setting]]
+7. [[./certificate/README.org][Let's Encrypt Setting]]
+8. [[./database/README.org][PostgreSQL Setting]]
+9. [[./httpd/README.org][HTTPD Setting]]
+10. [[./dovecot/README.org][Dovecot Setting]]

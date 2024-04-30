@@ -1,4 +1,4 @@
-#+TITLE: Readme
+#+TITLE: Terminal Configuration
 #+author: Thierry Ghelew
 
 * Summary

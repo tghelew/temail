@@ -1,4 +1,4 @@
-#+TITLE: Readme
+#+TITLE: Packet Filter(pf) Configuration
 #+author: Thierry Ghelew
 
 * Summary

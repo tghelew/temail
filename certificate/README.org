@@ -1,4 +1,4 @@
-#+TITLE: Readme
+#+TITLE: Certificate (Let's Encrypt) Configuration
 #+author: Thierry Ghelew
 
 * Summary

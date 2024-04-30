@@ -1,4 +1,4 @@
-#+TITLE: Readme
+#+TITLE: BIND Configuration
 #+author: Thierry Ghelew
 
 * Summary
