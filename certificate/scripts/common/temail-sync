@@ -77,6 +77,8 @@ __sync_mail_mode() {
     for d in $_domains; do
         _message 'Info' 'Moving domains certificate: ${d##*/} to /etc/ssl/'
         cp -Rf "$d" /etc/ssl/
+        chmod -R 644 /etc/ssl/"$d"/*
+        chmod -R 600 /etc/ssl/"$d"/priv*
     done
     # clean temp folder
     rm -rf "$_home"/certificates/*
