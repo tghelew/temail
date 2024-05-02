@@ -1,0 +1,5 @@
+#+TITLE: Dovecot Configuration
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://man.openbsd.org/httpd][Dovecot]] which I use as IMAP server et al. server. It is deployed only in my mx server and not the controller. The ideas is to sync dovecot between the primary and secondary server. As always, I tried to use the most common configuration settings.

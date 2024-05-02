@@ -1,0 +1,11 @@
+#!/bin/sh
+_type="${1:-spam}"
+_username="${2}"
+_cmd=/usr/local/bin/rspamc
+
+[ -x  $_cmd ] || {
+ echo "Error: $_cmd cannot be found" >&2
+ exit 1
+}
+
+exec $_cmd -d "${_username}" "learn_${_type}"

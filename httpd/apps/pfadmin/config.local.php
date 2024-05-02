@@ -104,7 +104,7 @@ $CONF['smtp_client'] = '';
 //
 // - sha512.b64 - {SHA512-CRYPT.B64} (base64 encoded sha512 crypt) (no dovecot dependency; should support migration from md5crypt)
 
-$CONF['encrypt'] = 'php_crypt'; // SHA512
+$CONF['encrypt'] = 'BLF-CRYPT'; // SHA512
 
 
 // Password validation
@@ -120,7 +120,7 @@ $CONF['password_validation'] = array(
 #    '/regular expression/' => '$PALANG key (optional: + parameter)',
     '/.{5}/'                => 'password_too_short 5',      # minimum length 5 characters
     '/([a-zA-Z].*){3}/'     => 'password_no_characters 3',  # must contain at least 3 characters
-    '/([0-9].*){1}/'        => 'password_no_digits 2',      # must contain at least 2 digits
+    '/([0-9].*){1}/'        => 'password_no_digits 1',      # must contain at least 2 digits
     '/([!\".,*&^%$£)(_+=\-`\'#@~\[\]\\<>\/].*){1,}/' => 'password_no_special 1', # must contain at least 1 special character
 
     /*  support a 'callable' value which if it returns a non-empty string will be assumed to have failed, non-empty string should be a PALANG key */
@@ -172,7 +172,7 @@ $CONF['domain_quota_default'] = '2048';
 
 // Quota
 // When you want to enforce quota for your mailbox users set this to 'YES'.
-$CONF['quota'] = 'NO';
+$CONF['quota'] = 'YES';
 // If you want to enforce domain-level quotas set this to 'YES'.
 $CONF['domain_quota'] = 'YES';
 // You can either use '1024000' or '1048576'
@@ -223,8 +223,8 @@ $CONF['alias_domain'] = 'YES';
 
 
 // Header
-$CONF['show_header_text'] = 'NO';
-$CONF['header_text'] = ':: Postfix Admin ::';
+$CONF['show_header_text'] = 'YES';
+$CONF['header_text'] = ':: tE-Mail Admin ::';
 
 // Footer
 // Below information will be on all pages.
@@ -256,7 +256,7 @@ $CONF['emailcheck_resolve_domain']='YES';
 // When creating mailboxes or aliases, check that the domain-part of the
 // address is local and managed by postfixadmin, preventing remote domains
 // from being the destination for an alias
-$CONF['emailcheck_localaliasonly']='NO';
+$CONF['emailcheck_localaliasonly']='YES';
 
 // Use TOTP for logging into Postfixadmin, can be overridden for listed
 // IPs to allow access by software that provide their own checking.
@@ -329,7 +329,7 @@ $CONF['recipient_delimiter'] = "";
 // See: DOCUMENTATION/DOVECOT.txt
 //      http://wiki.dovecot.org/Quota/Dict
 //
-$CONF['used_quotas'] = 'NO';
+$CONF['used_quotas'] = 'YES';
 
 // if you use dovecot >= 1.2, set this to yes.
 // Note about dovecot config: table "quota" is for 1.0 & 1.1, table "quota2" is for dovecot 1.2 and newer

@@ -38,18 +38,17 @@ _message () {
 
 _run_checks () {
     [ $DEBUG != 'n' ] && set -x
-    set -A  cmds $@
-    set -A missing "x"
+    set -A missing ""
 
     local i=1
-    for c in "${cmds[@]}"; do
+    for c in $@; do
         if ! type "${c}" 2>&1 >/dev/null; then
-            missing[$i]="${c}"
+            missing[$i]="$c"
             (( i += 1 ))
         fi
     done
     if [ ${#missing[@]} -gt 1 ]; then
-        _message "Error" "Missing program(s): ${missing[@]}"
+        _message "Error" "Missing program(s): ${missing[*]}"
     fi
 }
 
@@ -194,27 +193,50 @@ EOF
 }
 
 # Following the execution of `_check_diff` apply changes
+# and execute command
 # mtab: the number of tab to apply to messages
 # check: the output of the execution of check diff
 # source: the source directory
 # target: the target directory
+# cmds: commands to execute on files
 _apply_changes() {
 
     local mtab="${1:-1}"
     local check="${2}"
     local source="${3}"
     local target="${4}"
+    shift 4
+    local tmp=$(mktemp /tmp/temail.XXXXXXX.global)
+    local cmd="$@" state="" file=""  target_file=""  IFS=';'
+    typeset -i cmd_status=0 output=0
 
-    local state=""
-    local file=""
-    local bck=$IFS
-    local target_file
+    ___run_cmd() {
+        if [ "x$cmd" != "x" ]; then
+            set +e
+            IFS=';'
+            for c in $cmd; do
+                unset IFS
+                _message "$(($mtab + 1))info" "running command: $c on file: $file"
+                $__ $c "$target_file" > $tmp 2>&1
+                (( cmd_status += $? ))
+                _show $(( $mtab + 2)) $tmp
+            done
+            if [[ $cmd_status > 0 ]]; then
+                _message "$(( $mtab + 1 ))warning" "One or more command failed! removing file: $file"
+                $__ rm -f "$target_file"
+                (( output += 1 ))
+            fi
+            rm -f $tmp
+            set -e
+        fi
 
-    local IFS=';'
+    }
+
     for c in $check; do
         state=$(echo "$c" | cut -d @ -f 1)
         file=$(echo "$c" | cut -d @ -f 2)
-        IFS=$bck
+        _cmd_status=0
+        unset IFS
         case $state in
             S) _message "$(($mtab+ 1))info" "file: $file has not changed... skipping"
             ;;
@@ -222,6 +244,7 @@ _apply_changes() {
                target_file="${target}/$file"
                $__ mkdir -p "${target_file%/*}"
                $__ cp -Rf "$source/$file" "$target_file"
+               ___run_cmd
             ;;
             E) _message "$(($mtab+ 1))info" "file: $file is suspicious double checking!"
                if [ -f "$source/${file}" ]; then
@@ -229,6 +252,7 @@ _apply_changes() {
                    target_file="${target}/$file"
                    $__ mkdir -p "${target_file%/*}"
                    $__ cp -Rf "$source/$file" "$target_file"
+                   ___run_cmd
                else
                    _message "$(($mtab+ 2))info" "file: $file doesn't exist locally skipping"
                fi
@@ -239,6 +263,7 @@ _apply_changes() {
             ;;
         esac
     done
+    return $output
 }
 
 # Return a string command that cleanup a file or folder
@@ -303,7 +328,7 @@ _show_clean () {
         output="${output}${output:+;}"$(cat <<-EOF
 if [ -f $f ]; then
     while read -ru l; do
-        printf "$pattern" "$l"
+        printf "$pattern" "\$l"
     done < $f
     rm -f $f
 fi
