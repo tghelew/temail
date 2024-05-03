@@ -3,3 +3,66 @@
 
 * Summary
 This part is about configuring [[https://man.openbsd.org/httpd][Dovecot]] which I use as IMAP server et al. server. It is deployed only in my mx server and not the controller. The ideas is to sync dovecot between the primary and secondary server. As always, I tried to use the most common configuration settings.
+* Useful Commands
+- Check imap[s] server connection
+  #+begin_src sh
+  nc localhost 143
+  openssl s_client -connect localhot:imaps
+  #+end_src
+- IMAP session example
+  #+BEGIN_QUOTE
+    * OK [CAPABILITY IMAP4rev1 SASL-IR LOGIN-REFERRALS ID ENABLE IDLE LITERAL+ AUTH=PLAIN AUTH=LOGIN AUTH=DIGEST-MD5 AUTH=CRAM-MD5] Dovecot ready.
+
+    01 LOGIN user password
+
+    01 OK [CAPABILITY IMAP4rev1 SASL-IR LOGIN-REFERRALS ID ENABLE IDLE SORT SORT=DISPLAY THREAD=REFERENCES THREAD=REFS THREAD=ORDEREDSUBJECT MULTIAPPEND URL-PARTIAL CATENATE UNSELECT CHILDREN NAMESPACE UIDPLUS LIST-EXTENDED I18NLEVEL=1 CONDSTORE QRESYNC ESEARCH ESORT SEARCHRES WITHIN CONTEXT=SEARCH LIST-STATUS BINARY MOVE SNIPPET=FUZZY PREVIEW=FUZZY PREVIEW STATUS=SIZE SAVEDATE LITERAL+ NOTIFY SPECIAL-USE] Logged in
+
+    02 LIST "" "*"
+    * LIST (\HasNoChildren \Drafts) "." Drafts
+    * LIST (\HasNoChildren \Junk) "." Junk
+    * LIST (\HasNoChildren \Trash) "." Trash
+    * LIST (\HasNoChildren \Archive) "." Archive
+    * LIST (\HasNoChildren \Sent) "." Sent
+    * LIST (\HasNoChildren \Flagged) "." virtual/Flagged
+    * LIST (\HasNoChildren \Important) "." virtual/Important
+    * LIST (\HasNoChildren) "." INBOX
+    02 OK List completed (0.010 + 0.000 + 0.010 secs).
+
+    03 LOGOUT
+    * BYE Logging out
+    03 OK Logout completed (0.001 + 0.000 secs).
+  #+END_QUOTE
+- Check configuration
+  #+begin_src sh
+# show setting with non-default value
+doveconf -N
+
+# show setting for a given module
+doveconf -m lmtp
+  #+end_src
+- doveadm command example
+  #+begin_src sh
+# Reload configuration
+doas doveadm reload
+
+# Get replication status for all know users
+doas doveadm -f table replication status '*'
+
+# View replication error
+doas doveadm -f table replication status
+
+# Check authentication
+doas doveadm auth test 'username'
+doas doveadm auth login 'username'
+
+# View user info
+doas doveadm user -u 'user'
+# view list of users
+doas doveadm user -u '*'
+
+# List mailboxes
+doas doveadm mailbox list -A '*'
+
+# Get status of all mailbox
+doas doveadm -f table mailbox status -A all '*'
+  #+end_src

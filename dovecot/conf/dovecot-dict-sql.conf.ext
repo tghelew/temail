@@ -1,6 +1,6 @@
 # This file is commonly accessed via dict {} section in dovecot.conf
 
-connect = host=localhost dbname=vmail user=vmail
+connect = host=eshua.ghelew.ch dbname=vmail user=vmail
 
 # CREATE TABLE quota (
 #   username varchar(100) not null,

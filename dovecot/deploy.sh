@@ -112,10 +112,10 @@ EOF
 }
 
 _message "info" 'Initializing/Updating dovecot...'
-_run_checks "dovecot doveadm doveconf"
 
 _add_packages ./packages.conf
 
+_run_checks "dovecot doveadm doveconf"
 case "$1" in
 
     M*) # mail
@@ -137,7 +137,7 @@ if [ "$($__ rcctl get dovecot flags)" == "NO" ]; then
     _message '1info' 'Enabling dovecot service'
     $__ rcctl enable dovecot >/dev/null
 fi
-if $($__ rcctl ls started | grep -q dovecot); then
+if $(pgrep -q dovecot); then
     _message '1info' 'Reloading dovecot configuration'
     $__ doveadm reload
 else

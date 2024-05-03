@@ -104,7 +104,7 @@ $CONF['smtp_client'] = '';
 //
 // - sha512.b64 - {SHA512-CRYPT.B64} (base64 encoded sha512 crypt) (no dovecot dependency; should support migration from md5crypt)
 
-$CONF['encrypt'] = 'BLF-CRYPT'; // SHA512
+$CONF['encrypt'] = 'php_crypt:BLOWFISH'; // SHA512
 
 
 // Password validation
@@ -165,10 +165,10 @@ $CONF['domain_in_mailbox'] = 'NO';
 
 // Default Domain Values
 // Specify your default values below. Quota in MB.
-$CONF['aliases'] = '10';
-$CONF['mailboxes'] = '10';
-$CONF['maxquota'] = '1000';
-$CONF['domain_quota_default'] = '2048';
+$CONF['aliases'] = '60';
+$CONF['mailboxes'] = '60';
+$CONF['maxquota'] = '5120';
+$CONF['domain_quota_default'] = '1024';
 
 // Quota
 // When you want to enforce quota for your mailbox users set this to 'YES'.
@@ -176,7 +176,7 @@ $CONF['quota'] = 'YES';
 // If you want to enforce domain-level quotas set this to 'YES'.
 $CONF['domain_quota'] = 'YES';
 // You can either use '1024000' or '1048576'
-$CONF['quota_multiplier'] = '1024000';
+$CONF['quota_multiplier'] = '1048576';
 // fill state threshold (in per cent) for medium level (displayed as orange)
 $CONF['quota_level_med_pct'] = 55;
 // fill state threshold (in per cent) for high level (displayed as red)
@@ -219,6 +219,15 @@ $CONF['alias_goto_limit'] = '0';
 // Note: If you update from 2.2.x or earlier, you will have to update your postfix configuration.
 // Set to 'NO' to disable alias domains.
 $CONF['alias_domain'] = 'YES';
+
+// Fetchmail
+// If you don't want fetchmail tab set this to 'NO';
+$CONF['fetchmail'] = 'NO';
+
+// fetchmail_extra_options allows users to specify any fetchmail options and any MDA
+// (it will even accept 'rm -rf /' as MDA!)
+// This should be set to NO, except if you *really* trust *all* your users.
+$CONF['fetchmail_extra_options'] = 'NO';
 
 
 

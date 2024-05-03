@@ -93,7 +93,6 @@ __deploy_custom() {
     _apply_changes 1 "$check" "$_custom_dir" "${_target_dir}"
 
     $__ sed -i "s/@name@/$_hostname/" "${_target_dir}/postgresql.conf"
-
     $__ chown -R _postgresql:_postgresql "${_target_dir}"
 
     _message "1info" 'Deploying custom configurations done!'
