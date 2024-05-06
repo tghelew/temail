@@ -66,8 +66,11 @@ function mkdcd {
 
 
 function kman {
-  #FIXME: not working in bsd
-  PAGER="less -g -I -s -p'$1'" man ksh;
+  PAGER="less -gisp $1" man ksh;
+}
+
+function sman {
+  PAGER="less -gisp $1" man $2;
 }
 
 function alval {
