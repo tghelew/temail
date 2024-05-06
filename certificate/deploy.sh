@@ -50,7 +50,7 @@ function _deploy_certbot {
     # setup cronjob
     _message '1info' 'Updating crontab...'
 
-    cat <<-EOF | _update_crontab 'certbot' 'root'
+    cat <<-EOF | _update_crontab 1 'certbot' 'root'
     #-----------------------------------certbot Start------------------------------------------------------------
     0~30     4      */5       *       *       -ns  /usr/local/bin/certbot renew -c /var/certbot/etc/cli.ini -q
     #-----------------------------------certbot End--------------------------------------------------------------

@@ -72,7 +72,7 @@ EOF
     $__ chown root:bin /usr/local/bin/"$target_file"
 
     # crontab
-    cat <<-EOF | _update_crontab 'root.zone' 'root'
+    cat <<-EOF | _update_crontab 2 'root.zone' 'root'
     #-----------------------------------root.zone Start------------------------------------
     0~10     6       1      */3       *       -ns  /usr/local/bin/update-named-root
     #-----------------------------------root.zone End--------------------------------------
@@ -136,7 +136,7 @@ _deploy_adzone() {
     $__ chown root:bin /usr/local/bin/"$target_file"
 
     # crontab
-    cat <<-EOF | _update_crontab 'adblock' 'root'
+    cat <<-EOF | _update_crontab 2 'adblock' 'root'
     #-----------------------------------adblock Start------------------------------------
     0~10     3       *       *       *       -ns  /usr/local/bin/update-named-adblock
     #-----------------------------------adblock End--------------------------------------

@@ -75,36 +75,52 @@ _add_packages () {
 }
 
 _update_crontab () {
-    _run_checks "id sed crontab cat"
+    _run_checks "id sed crontab cat sha256"
 
-    local tmpfile=$(mktemp /tmp/temail.XXXXXXX.crontab)
-    trap "[ -f $tmpfile ] && rm -f $tmpfile" ERR
+    local cronfile=$(mktemp /tmp/temail.XXXXXXX.crontab)
+    local tempfile=$(mktemp /tmp/temail.XXXXXXX.crontab)
+    trap "$(_clean $cronfile $tempfile)" ERR
 
-    local location="$1"
+    typeset -i mtab=${1:-1}
+    (( mtab += 1 ))
+
+    local location="$2"
     [ -z $location ] && \
-        _message 'Error' "The location in the cron file cannot be empty"
+        _message "${mtab}Error" "The location in the cron file cannot be empty"
 
-    local user="${2:-root}"
+    local user="${3:-root}"
       id -u $user >/dev/null 2>&1 ||  \
-        _message 'Error' "The user $user does not exist"
+        _message "${mtab}Error" "The user $user does not exist"
     shift ${#@}
+    local old_hash="" new_hash=""
 
-    $__ crontab -l > $tmpfile
-
-    # Remove previous entries which must must be like:
-    # #-$location Start---
-    # #-$location End---
-    sed -Ei "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/D" $tmpfile
+    $__ crontab -l > $cronfile
 
     # add new cron tab
     while read -u  ctab 2>/dev/null; do
-        print "$ctab"  >> $tmpfile
+        print "$ctab"  >> $tempfile
     done
 
-    $__ crontab -u $user $tmpfile
+    # Check difference
+    old_hash="$(sed -En "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/p" $cronfile | sha256 -q)"
+    new_hash="$(sed -En "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/p" $tempfile | sha256 -q)"
 
+    if [[ "$old_hash" != "$new_hash" ]]; then
+        _message "${mtab}info" "Updating crontab..."
 
-    [ -f $tmpfile ] && rm -f $tmpfile
+        # Remove previous entries which must must be like:
+        # #-$location Start---
+        # #-$location End---
+        sed -Ei "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/D" $cronfile
+        $__ crontab -u $user $cronfile
+        _message "${mtab}info" "Updating crontab done!"
+    else
+        _message "${mtab}info" "Crontab didn't change skipping"
+    fi
+
+    # clean up
+    [ -f $cronfile ] && rm -f $cronfile
+    [ -f $tempfile ] && rm -f $tempfile
 
 }
 
@@ -206,12 +222,12 @@ _apply_changes() {
     local source="${3}"
     local target="${4}"
     shift 4
-    local tmp=$(mktemp /tmp/temail.XXXXXXX.global)
     local cmd="$@" state="" file=""  target_file=""  IFS=';'
     typeset -i cmd_status=0 output=0
 
     ___run_cmd() {
         if [ "x$cmd" != "x" ]; then
+            local tmp=$(mktemp /tmp/temail.XXXXXXX.global)
             set +e
             IFS=';'
             for c in $cmd; do
