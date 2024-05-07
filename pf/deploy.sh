@@ -45,15 +45,15 @@ _message "1info" 'Deploying pf configuration...'
 _source_dir="${_tmp}"
 _target_dir="/etc"
 _check=$(_check_diff -s "${_source_dir}" -t "${_target_dir}" -f "*")
-_apply_changes 1 "$_check" "${_source_dir}" "${_target_dir}" "chown root:wheel;pfctl -f ${_target_dir}/pf.conf"
+_apply_changes 1 "$_check" "${_source_dir}" "${_target_dir}" "chown root:wheel;pfctl -f"
 _message "1info" 'Deploying pf configuration done!'
 
 # crontab
 cat <<-EOF | _update_crontab 1 'pf' 'root'
-#-----------------------------------pf Start------------------------------------
+#----------------------------------------------pf Start------------------------------------------------------
 0~7     6       *       *       *       -ns $SHELL /etc/pf/x_expire_table 86400 blocked bruteforce
 */10    *       *       *       *       -ns $SHELL /etc/pf/x_manage_table
-#-----------------------------------pf End--------------------------------------
+#----------------------------------------------pf End--------------------------------------------------------
 EOF
 _message 'Info' 'PF setup completed!'
 

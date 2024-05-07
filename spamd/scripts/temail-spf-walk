@@ -1,0 +1,413 @@
+#!/usr/bin/env ksh
+# This script is based on spf_fetch: https://github.com/akpoff/spf_fetch
+# and re-written in ksh
+set -euo pipefail
+
+_scriptname="${0##*/}"
+_dns_server="" # localhost
+_ip_filter=""
+_proto=""
+_source_file=""
+_target_file=""
+_filter_cmd=""
+_action_cmd=""
+_domains=""
+_temp_file="$(mktemp /tmp/temail.XXXXXXX.spf)"
+typeset -i yes=0 no=1
+_debug=$no
+_with_mx=$no
+
+trap "[ -f $_temp_file ] && rm -rf $_temp_file" ERR EXIT
+
+_usage() {
+   cat <<-EOF
+usage: $_scriptname [-46hDx] [-a command] [-t command] [-f file] [-d server] [-o file] [domain ...]
+  Description:
+       Walk through the spf (v=spf1) TXT record of domain(s) given in parameter and/or
+       with -f and return the list of ip addresses allowed to send email from that domain.
+       If -o is provided and the file already exits check if the generated ip list has changed
+       and does not alter the file in that case.
+
+  Parameters:
+       -4 Select and return ipv4.
+       -6 Select and return ipv6.
+       -x include mx server for the list of domain
+       -h Show this help.
+       -t the filter executable to run on return ip list
+       -a the action executable to run when the resulting ip list is new
+       -D Add debug message in mail.debug syslog facility.
+       -d the DNS server to use for querying.
+       -f The filename holding the list of domains (one per line) to spf walk.
+       -o the target file to store the returned ip's list.
+EOF
+}
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+
+   mtype=${1:-"Error"}
+   local mpattern="%s: %s\n" mtab=""
+   shift 1
+
+   local tag=$_scriptname
+   local facility="mail.info"
+   [[ $mtype == "[dD][eE][bB][uU][gG]" ]] && facility="mail.debug"
+
+   mpattern="$mtab$mpattern"
+
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="mail.error"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+   fi
+}
+
+_run_checks () {
+    set -A missing ""
+    typeset -i i=1
+    for c in $@; do
+        if ! type "${c}" 2>&1 >/dev/null; then
+            missing[$i]="$c"
+            (( i += 1 ))
+        fi
+    done
+    if [ ${#missing[@]} -gt 1 ]; then
+        _message "Error" "Missing program(s): ${missing[*]}"
+    fi
+}
+
+# Perform a dns lookup with the following parameter
+# type: resource record type
+# name: name of the resource record to lookup
+_dns_lookup() {
+    local online="${1:-$no}" type="${2}"
+    shift 2
+    local name="$@" cmd=""
+
+
+    [ "x$type" == "x" ] && _message "Error" "Record type cannot be empty!"
+    [ "x$name" == "x" ] && _message "Error" "Name cannot be empty!"
+
+    [ $_debug -eq $yes ] &&\
+        _message 'Debug' "Dns lookup: Server=${_dns_server:-localhost};  Type=${type}; Name=${name}"
+
+    cmd="dig $_dns_server +short "${type}" ${name}"
+    if [ $online -eq $no ]; then
+        $cmd
+    else
+        $cmd | tr ' ' '\n'
+    fi
+}
+
+# Return one ip per line
+# after running program filter if any
+_process_ips() {
+    local ips="$@"
+    for ip in $ips; do
+        [ $_debug -eq $yes ] &&\
+            _message "debug" "Processing: ip: $ip"
+        if [ -x "$_filter_cmd" ]; then
+
+            [ $_debug -eq $yes ] &&\
+                _message "debug" "Applying filter: $_ip_filter for ip: $ip"
+
+            ip=$($_ip_filter $ip)
+
+            [ $_debug -eq $yes ] &&\
+                _message "debug" "Result: ${ip:-empty}"
+        fi
+        [ -n "$ip" ] && echo $ip | tr ' ' "\n"
+    done
+}
+
+# from a list of mx for a domain
+# get all ips
+_process_mx() {
+    local domain="$@" ips=""
+    local mxs=$(_dns_lookup $no MX $domain | cut -d' ' -f 2)
+    local type="A"
+    [ "x$domain" == "x" ] && _message "Error" "Domain cannot be empty!"
+
+    for proto in $_proto; do
+        case $proto in
+            *4)
+                type="A"
+                ;;
+            *6)
+                type="AAAA"
+                ;;
+            *)
+                _message "Error" "Unknown protocol: $proto"
+                ;;
+        esac
+        [ $_debug -eq $yes ] &&\
+            _message "debug" "Processing MX for Type: $type and domain: $domain"
+        for mx in $mxs; do
+            ips=${ips}"${ips:+ }"$(_dns_lookup $yes $type $mx)
+        done
+    done
+    echo "$ips"
+}
+
+# from a list of domain
+# get all the ip addresses
+_process_address() {
+    local type="A"
+    local domain="$@" ips=""
+    for proto in $_proto; do
+        case $proto in
+            *4)
+                type="A"
+                ;;
+            *6)
+                type="AAAA"
+                ;;
+            *)
+                _message "Error" "Unknown protocol: $proto"
+                ;;
+        esac
+        ips="${ips}${ips:+ }$(_dns_lookup $yes $type $domain)"
+    done
+    echo "$ips"
+}
+
+# Query domain for the TXT spf
+# Add parsed spf output to return ip addresses
+# parameter: the domain to spf walk
+_process_spf() {
+   local domain="$1"
+   typeset -l  spf=""
+   # Get spf record
+   _message "info" "Retrieving spf record for domain: $domain"
+   spf=$(_dns_lookup $no TXT $domain | \
+       grep spf | \
+       sed -e 's/"//g' -e 's/v=spf[0-9] //g' -re 's/([0-9a-f:\.]+)[[:space:]]+([0-9a-f:\.]+)/\1\2/g')
+   [ $_debug -eq $yes ] && \
+       _message "debug" "Retieved spf: $spf"
+
+   _process_domain $spf
+}
+
+# Query domain for mx record
+# parameter: the domain to perform mx query
+_process_mx() {
+
+   local domain="$1"
+   typeset -l  mxs=""
+   # Get spf record
+   _message "info" "Retrieving mx record for domain: $domain"
+   mxs=$(_dns_lookup $no MX $domain | \
+       cut -sd ' ' -f2 |\
+       sed 's/^/mx:/' |\
+       tr '\n' ' ')
+
+   [ $_debug -eq $yes ] && \
+       _message "debug" "Retieved mx: $mxs"
+
+   _process_domain $mxs
+
+}
+
+# Process result of an spf output
+# note that it can also be used to query a or mx record type if
+# the proper result is sent as parameter.
+# e.g:
+#   _process_domain mx:mail.example.com/24
+#   _process_domain a:www.example.com
+_process_domain() {
+    local result="$@" spec="" cidr="" output="" ips=""
+    typeset -i wmacro=$no
+
+    # Process query
+    for mech in $result; do
+        spec=""
+        cidr=""
+        case $mech in
+            include*|redirect*)
+                spec=$(echo $mech | cut -sd ':' -f2)
+                if [ "x$spec" == "x" ]; then
+                    spec=$(echo $mech | cut -sd '=' -f2)
+                    if [ "x$spec" == "x" ]; then
+                        _message "Warning" "Include mechanism or Redirect etected but no domain specification found"
+                    fi
+                elif [[ "$spec" == *%* ]]; then
+                    [ $_debug -eq $yes ] && \
+                        _message "debug" "Domain specification:$spec contains macro which are not supported"
+                    wmacro=$yes
+                fi
+                [ $wmacro -eq $no ] && _process_spf $spec
+                ;;
+
+            a*|mx*)
+                local cmd=""
+                spec=$(echo $mech | cut -sd ':' -f2)
+                if [ "x$spec" == "x" ]; then
+                    spec=$domain
+                elif [[ "$spec" == *%* ]]; then
+                    [ $_debug -eq $yes ] && \
+                        _message "debug" "Domain specification:$spec contains macro which are not supported"
+                    wmacro=$yes
+                elif [[ "$spec" == */* ]]; then
+                    spec=$(echo $spec | cut -d '/' -f1)
+                    cidr=$(echo $spec | cut -sd '/' -f2)
+                fi
+                if [ $wmacro -eq $no ]; then
+                    if [[ $mech == "mx*" ]]; then
+                        cmd=_process_mx
+                    else
+                        cmd=_process_address
+                    fi
+                    ips=$($cmd $spec | tr ' ' "$cidr\n")
+                    _process_ips $ips
+                fi
+                ;;
+            ip4*|ip6*)
+                local spec=$(echo $mech | cut -d ':' -f 2-)
+                local proto=$(echo $_proto | sed -r 's/ipv?//g')
+                if [ "$spec" == "$mech" ]; then
+                    _message "Warning" "Include mechanism or Redirect etected but no domain specification found"
+                elif [[ "$proto" == *${_proto}* ]]; then
+                    _process_ips $spec
+                fi
+                ;;
+            *)
+                [ $_debug -eq $yes ] && \
+                    _message "debug" "Un-processed mechanism or modifier: $mech"
+
+                ;;
+        esac
+    done
+}
+
+# Validate input parameters
+_check_param() {
+
+    [ "x$_proto" == "x" ] && _proto="4 6"
+
+    [ "x$_dns_server" != "x" ] && \
+        {
+            if ! $(ping -c1 -q $_dns_server >/dev/null 2>&1); then
+                _message "Error" "DNS Server: $_dns_server is not reachable!"
+            fi
+        }
+    [[ "x$_filter_cmd" == "x" || -x "$(echo $_filter_cmd | cut -d' ' -f1)" ]] || \
+        {
+         if ! type $(echo $_filter_cmd | cut -d' ' -f1) 2>&1 >/dev/null; then
+             _message "Error" "Filter command: $_filter_cmd does not exist or cannot be executed!"
+         fi
+
+        }
+
+    [[ "x$_action_cmd" == "x" || -x "$(echo $_action_cmd | cut -d' ' -f1)" ]] || \
+        {
+         if ! type $(echo $_action_cmd | cut -d' ' -f1) 2>&1 >/dev/null; then
+             _message "Error" "Action command: $_action_cmd does not exist or cannot be executed!"
+         fi
+
+        }
+
+    [[ "x$_source_file" == "x" || -r "$_source_file" ]] || \
+        _message "Error" "Filename: $_source_file does not exists or is not readable!"
+
+    if [ -e "$_target_file" ]; then
+        [ -w "$_target_file" ] || \
+            _message "Error" "Filename: $_target_file exits but it's not writable!"
+    elif [ "x$_target_file" != "x" ]; then
+        if ! $( touch "$_target_file" 2>/dev/null ); then
+           _message "Error" "Cannot create filename: $_target_file!"
+        fi
+    fi
+
+    [[ "x$_domains" == "x" && ! -r "$_source_file" ]] && \
+        _message "Error" "Either the list of domain or the input file (-f) must be provided!"
+}
+
+
+_run_checks "dig ping diff"
+
+while getopts 46hDxd:f:o:t:a: param;do
+    case $param in
+        4|6)
+            _proto="${_proto}${_proto:+ }$param"
+        ;;
+        h)
+            _usage && exit 0
+        ;;
+        D)
+            _debug=$yes
+        ;;
+        d)
+            _dns_server="$OPTARG"
+        ;;
+        f)
+            _source_file="$OPTARG"
+        ;;
+        t)
+            _filter_cmd="$OPTARG"
+        ;;
+        a)
+            _action_cmd="$OPTARG"
+        ;;
+        o)
+            _target_file="$OPTARG"
+        ;;
+        x)
+            _with_mx=$yes
+        ;;
+        ?)
+            _usage && exit 2
+    esac
+done
+shift $(($OPTIND - 1))
+_domains="$@"
+
+_check_param
+
+if [ "x$_domains" != "x" ]; then
+    _message "Info" "Retrieving ips for domains: $_domains"
+    for domain in $_domains; do
+        _process_spf $domain >> $_temp_file
+        if [ $_with_mx -eq $yes ]; then
+            _process_mx $domain >> $_temp_file
+        fi
+    done
+fi
+
+if  [ -f "$_source_file" ]; then
+    _message "Info" "Retrieving ips from file: $_source_file"
+    local domain=""
+    sed '/#/d' $_source_file | while read -ru domain; do
+        [ "x$domain" == "x" ] && continue
+        _process_spf $domain >> $_temp_file
+        if [ $_with_mx -eq $yes ]; then
+            _process_mx $domain >> $_temp_file
+        fi
+    done
+fi
+
+[ -s $_temp_file ] &&  sort -u -o $_temp_file $_temp_file
+
+if [ "x$_target_file" == "x" ]; then
+    cat $_temp_file
+elif [ -f $_target_file ]; then
+    if $(diff -q "$_target_file" "$_temp_file" >/dev/null 2>&1); then
+        _message "Info" "File: $_target_file has not changed skipping!"
+    else
+        _message "Info" "New version of File: $_target_file is available updating!"
+        cat $_temp_file > $_target_file
+        if [ "x$_action_cmd" != "x" ]; then
+            _message "Info" "Running command: $_action_cmd on $_target_file"
+            $_action_cmd $_target_file >/dev/null 2>&1
+        fi
+    fi
+else
+    _message "Info" "Saving output to file: $_target_file."
+    cat $_temp_file > $_target_file
+    if [ "x$_action_cmd" != "x" ]; then
+        _message "Info" "Running command: $_action_cmd on $_target_file"
+        $_action_cmd $_target_file >/dev/null 2>&1
+    fi
+fi

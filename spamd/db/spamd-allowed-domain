@@ -1,0 +1,10 @@
+# This list is used my temail-spf-wall to fetch the list ips allowed to send email
+# From a given domains.
+
+# Big Corporations
+google.com
+apple.com
+microsoft.com
+live.com
+icloud.com
+outlook.com

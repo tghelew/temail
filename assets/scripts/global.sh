@@ -112,6 +112,8 @@ _update_crontab () {
         # #-$location Start---
         # #-$location End---
         sed -Ei "/^#-+$location[[:space:]]+Start/,/^#-+$location[[:space:]]+End/D" $cronfile
+        cat $tempfile >> $cronfile
+
         $__ crontab -u $user $cronfile
         _message "${mtab}info" "Updating crontab done!"
     else

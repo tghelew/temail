@@ -7,5 +7,5 @@ At the same time I want to make it as painful as possible anyone that want to fo
 ** Tables
 - *t_server*: this is the list of authorized server which are my mails servers. Server-to-Server communication should consist of replication, health, and synchronization protocols.
 - *t_allowed*: this is the list of ip that is allowed. I use it to mainly allowed DNS request to my [[https://unbound.docs.nlnetlabs.nl/en/latest/][Unbound]] server which also act as an AdBlocker.
-- *t_blocked*: list of ips that I want to manually for one reason or another.
+- *t_blocked*: list of ips that I want to manually for one reason or another not used.
 - *t_bruteforce*: list of ips automatically added which are blocked for a given period of time

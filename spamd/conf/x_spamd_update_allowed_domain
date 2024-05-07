@@ -1,0 +1,7 @@
+#!/usr/bin/env ksh
+set -euo pipefail
+
+local _root=/var/db _cmd=/usr/local/bin/temail-spf-walk _action='pfctl -t nospamd -T replace -f'
+local _source=spamd-allowed-domain _target=spamd-allowed-from-domain
+
+$_cmd -f ${_root}/${_source} -o ${_root}/${_target} -a "$_action"

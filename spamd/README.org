@@ -1,0 +1,6 @@
+#+TITLE: Spamd - Spam deferral deamon
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://man.openbsd.org/spamd][spamd]] the OpenBSD spam deferral daemon. My configuration consist of enabling both grey & black listing. For now I don't indent to change the default /grey/listing parameters. However I'll /white/list well-known domains IPS like ~google, apple, miscrosoft,...~ mainly because they have a large scale user base and have a lot of sending mail servers.
+which would slowdown the speed at which I receive e-mail from these hosts. In oder to get ip address of these big guys mail servers, I've created a script: [[./scripts/temail-spf-walk][temail-spf-walk]] which looks at the spf TXT records and /walk/ through the definition to extract relevant ip addresses.

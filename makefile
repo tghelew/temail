@@ -1,9 +1,9 @@
 DEPLOY = deploy.sh
 HOSTNAME != hostname -s
 # PARAMS ?=
-TARGETS = terminal pf syslog user dns certificate database httpd dovecot
+TARGETS = terminal pf syslog user dns certificate database httpd dovecot spamd
 CONTROLLER = terminal pf syslog user dns certificate database httpd
-MAIL = terminal pf syslog user dns httpd database dovecot
+MAIL = terminal pf syslog user dns httpd database dovecot spamd
 
 # C: controller M: mail
 .ifndef PARAMS
