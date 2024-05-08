@@ -275,9 +275,9 @@ _apply_changes() {
                    _message "$(($mtab+ 2))info" "file: $file doesn't exist locally skipping"
                fi
             ;;
-            X) _message "$(($mtab+ 1))Warnig" "Unable to read dir: $file check that it exists or is readable."
+            X) _message "$(($mtab+ 1))Warning" "Unable to read dir: $file check that it exists or is readable."
             ;;
-            *) _message "$(($mtab+ 1))Warnig" "Something happen during parsing of the command."
+            *) _message "$(($mtab+ 1))Warning" "Something happen during parsing of the command."
             ;;
         esac
     done

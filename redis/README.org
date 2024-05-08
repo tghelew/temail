@@ -1,0 +1,6 @@
+#+TITLE: Redis - In memory database
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://redis.io/ docs/latest/][Redis]] to be used as the backend database for [[https://www.rspamd.com/doc/quickstart.html][Rspamd]]. As I have two mail servers and one controller I will try to use [[https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/][sentinel]] to monitor my instances. Therefore All instances could potentially become primary at some point in time. The other big changes is that it is not advice to use the same redis instance for ephemeral and long term storage. I haven't find any good reason not to do so. Therefore, I'll learned the hard way why it's not a good idea.
+Since I is not intended to be a huge mail infrastructure it should be ok...

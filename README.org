@@ -35,6 +35,7 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 - [[https://man.openbsd.org/spamd][Spamd]]: the spam deferral daemon used in conjunction with PF to filter spammers.
 - [[https://www.opensmtpd.org][OpenSMTPD:]] the heart of the mail server which is fully available in OpenBSD base. Additionally, some filters and an SQL connector will be used as external packages.
 - [[https://www.rspamd.com/doc/quickstart.html][Rspamd]]: highly configurable spam filtering system
+- [[https://www.redis.io/docs/latest][Redis]]: In memory database used as a backend storage for Rspamd
 - [[https://www.dovecot.org][Dovecot]]: IMAP server which I've been using since...ever although I don't really master its configuration yet thanks to Kolab
 - [[https://www.postgresql.org][PostgreSQL]]:This is my favorite database since a long time and I am very happy to be able to use it with replication for the first time.
 - [[https://letsencrypt.org][Let's Encrypt]]: I don't think it's necessary to describe what it is. But I'll use [[https://man.openbsd.org/acme-client.1][acme-client(1)]] included in OpenBSD base to get/sync my certificates.
@@ -62,5 +63,6 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 9. [[./httpd/][HTTPD Setting]]
 10. [[./dovecot/README.org][Dovecot Setting]]
 12. [[./spamd/][Spamd Setting]]
-13. [[./rspamd/][Rspamd Setting]]
-14. [[./smtpd/][smtpd Setting]]
+13. [[./redis/][Redis Setting]]
+14. [[./rspamd/][Rspamd Setting]]
+15. [[./smtpd/][smtpd Setting]]

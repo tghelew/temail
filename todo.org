@@ -11,9 +11,9 @@
 ** DONE setup function to update crontab
 ** DONE setup bind & configure he.net
 ** DONE certificates & sync script
-** TODO setup database and php admin
-** TODO setup dovecot
-** TODO setup spamd
+** DONE setup database and php admin
+** DONE setup dovecot
+** DONE setup spamd
 ** TODO basic smtp
 ** TODO setup redis
 
@@ -26,6 +26,7 @@
 ** KILL Setup crontab to compress nsd backup config (monthly)
 ** TODO dovecot: Setup script for junk mail cleanup script
 ** TODO dovecot: Setup script for quota management
+** TODO pf: fix deployment issue where the temp folder doesn't exist on first run
 
 
 

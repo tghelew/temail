@@ -53,9 +53,14 @@ alias du='du -kh'
 alias dud='du -d 1'
 
 alias topc='top -o cpu'
-alias topm='top -o vsize'
+alias topm='top -o res'
+alias topu='top -U'
 
+# installed pkg
 alias psql='psql -U _postgresql -d postgres '
+alias redis='redis-cli -p 6378'
+alias sentinel='redis-cli -p 8736'
+
 
 # History
 

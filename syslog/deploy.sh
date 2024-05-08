@@ -41,16 +41,23 @@ _target_syslog="/etc/syslog.conf"
 _target_newsyslog="/etc/newsyslog.conf"
 
 _message "1info" "Checking if logfile already exist"
-for f in $(cat ./logfile.conf); do
-    if [[ -f "$f" ]]; then
-        _message '2info' "file: $f already exist skipping..."
+local file="" owner="" mode=""
+
+while read -ru file owner mode; do
+    [ "x$file" == "x" ] &&  continue
+    [ "x$owner" == "x" ] && owner=root:wheel
+    [ "x$mode" == "x" ] && mode=640
+
+    if [[ -f "$file" ]]; then
+        _message '2info' "file: $file already exist skipping..."
     else
-        _message '2info' "file: $f does not exist creating it..."
-        $__ touch "$f"
-        $__ chown root:wheel "$f"
-        $__ chmod 640 "$f"
+        _message '2info' "file: $file does not exist creating it..."
+        $__ touch "$file"
+        $__ chown $owner "$file"
+        $__ chmod $mode "$file"
     fi
-done
+done < ./logfile.conf
+
 _message "1info" "Checking if logfiles already exist done!"
 
 if $(diff -qb "$_syslog_conf" /etc/syslog.conf >/dev/null 2>&1); then

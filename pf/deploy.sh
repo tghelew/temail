@@ -37,8 +37,8 @@ _target_dir="/etc/pf"
 _message "1info" 'Deploying tables, anchors, and scripts...'
 _check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
 _apply_changes 1 "$_check" "$_source_dir" "${_target_dir}" "chown root:wheel"
-[ ! -f "${_target_dir}/t_bruteforce" ] && touch "${_target_dir}/t_bruteforce"
-[ ! -f "${_target_dir}/t_blocked" ] && touch "${_target_dir}/t_blocked"
+[ ! -f "${_target_dir}/t_bruteforce" ] && $__ touch "${_target_dir}/t_bruteforce"
+[ ! -f "${_target_dir}/t_blocked" ] && $__ touch "${_target_dir}/t_blocked"
 _message "1info" 'Deploying tables, anchors, and scripts done!'
 
 _message "1info" 'Deploying pf configuration...'
