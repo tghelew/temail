@@ -21,6 +21,49 @@ _target_script="/usr/local/bin/named-adblock"
 
 _run_checks "diff"
 
+__handle_dynamic_zone(){
+    set +e
+    typeset -l mtab="$1" action="$3" zones=""
+    local changed="$2"
+    [ "x$changed" == "x" ] && return
+    [ "x$action" == "x" ] && action="reload"
+
+    local state="" file="" domain="" name=""
+    local IFS=';'
+    for c in $changed; do
+        state=$(echo "$c" | cut -d @ -f 1)
+        file=$(echo "$c" | cut -d @ -f 2)
+        if [ "$state" == "D" ]; then
+            zones="${zones}${zones:+\t}$(echo $file |\
+                sed -E 's#\.?/?([[:alnum:]]+)/([[:alnum:]]+)\.zone#\2.\1#')"
+        fi
+    done
+    unset IFS
+
+    [ "x${zones}" != "x" ] && \
+        {
+            for z in $zones; do
+                case $action in
+                    f*)
+                        _message "${mtab}info" "Freezing zone: $z ..."
+                        $__ rndc freeze $z 2>1& >/dev/null
+                        _message "${mtab}info" "Freezing zone: $z done!"
+                        ;;
+                    r*)
+                        _message "${mtab}info" "Reloading zone: $z ..."
+                        $__ rndc reload $z >/dev/null 2>1&
+                        $__ rndc thaw $z  >/dev/null 2>1&
+                        _message "${mtab}info" "Reloading zone: $z done!"
+                        ;;
+                    *)
+                        ;;
+                esac
+            done
+        }
+
+    set -e
+}
+
 _deploy_common() {
     _message '1info' 'Deploying/Updating common'
     # check if file has changed:
@@ -111,7 +154,9 @@ _deploy_primary() {
     _target_dir="/var/named/zones"
 
     check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.zone")
+    __handle_dynamic_zone 2 "$check" freeze
     _apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    __handle_dynamic_zone 2 "$check" reload
 
     _message '1info' 'Deploying/Updating primary zones done!'
 }
@@ -120,11 +165,21 @@ _deploy_adzone() {
     _message '1info' 'Deploying/Updating adzone'
 
     local source_dir="./zones/virtual"
+    local source_file="adblock.zone"
     local check=""
     _target_dir="/var/named/zones"
+    typeset -i source_serial=$(sed -nE 's/^[[:space:]]+([0-9]+).*;serial/\1/p' "${source_dir}/${source_file}" )
+    typeset -i target_serial=$(sed -nE 's/^[[:space:]]+([0-9]+).*;serial/\1/p' "${_target_dir}/${source_file}" )
 
-    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.zone")
-    _apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    if [[ $target_serial > $source_serial ]]; then
+
+        check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "$source_file")
+        _apply_changes 1 "$check" "$source_dir" "$_target_dir"
+    else
+        local mes="Target file is serial: $target_serial"
+        mes=$mes" is newer than Source serial: $source_serial skipping..."
+        _message '2warning' "$mes"
+    fi
 
     _message '2info' 'Deploying/Updating update script'
 
