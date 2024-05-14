@@ -46,6 +46,8 @@ _show "$(( $_mtab + 1))" "$_tmp"
 
 _message "${_mtab}info" "Maybe creating a database done!"
 
+[ -f $_tmp ] && rm -rf "$_tmp"
+
 _message "${_mtab}info" "Maybe creating template folder..."
 [ -d "${_target_app_dir}" ] || _messages "${_mtab}Error" "Folder: ${_target_app_dir} doesn't exist!"
 $__ mkdir -p "${_target_app_dir}"/templates_c

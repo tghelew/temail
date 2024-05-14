@@ -6,6 +6,9 @@ _curpwd="${PWD}"
 _scriptdir="${0%/*}"
 _hostname_full=$(hostname)
 _hostname=$(hostname -s)
+_domain=${_hostname_full#*.}
+_twin=$([[ "$_hostname" == eshub ]] && echo "eshuc.$_domain" || echo "eshub.$_domain")
+
 typeset -U _type="$1"
 
 cd "${_scriptdir}"
@@ -42,6 +45,7 @@ __deploy_config_section() {
         -exec sed -i \
         -e "s/@hostname@/${_hostname_full}/g" \
         -e "s/@host@/${_hostname}/g" \
+        -e "s/@twin@/${_twin}/g" \
         {} +
     _message "2info" "Replacing templates in configuration files done!"
 

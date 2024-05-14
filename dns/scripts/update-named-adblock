@@ -75,7 +75,8 @@ adguardhome() {
   # AdAway default blocklist
   _src="https://adaway.org/hosts.txt"
   ftp -MVo - "$_src" | \
-  awk '/^127.0.0.1 / { print $2"@IN@CNAME@.@;NXDOMAIN policy" }'
+  awk '/^127.0.0.1 / { print $2"@IN@CNAME@.@;NXDOMAIN policy" }' | \
+  grep -v localhost
 }
 
 # From Pi-hole

@@ -1,0 +1,11 @@
+127.0.0.1       localhost
+::1             localhost
+
+93.177.66.222           eshua.ghelew.ch eshua
+# 2a03:4000:38:e::0       eshua.ghelew.ch eshua
+
+46.23.94.97             eshub.ghelew.ch eshub
+# 2a03:6000:6f67:622::97  eshub.ghelew.ch eshub
+
+46.23.93.235            eshuc.ghelew.ch eshuc
+# 2a03:6000:6f67:622::235 eshuc.ghelew.ch eshuc

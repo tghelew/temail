@@ -208,11 +208,8 @@ _deploy_resolv() {
     local check=""
     _target_dir="/etc"
 
-    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*.conf")
-    _apply_changes 1 "$check" "$source_dir" "${_target_dir}"
-
-    $__ chown root:wheel "${_target_dir}/resolv.conf"
-    $__ chmod 644 "${_target_dir}/resolv.conf"
+    check=$(_check_diff -s "$source_dir" -t "${_target_dir}" -f "*")
+    _apply_changes 1 "$check" "$source_dir" "${_target_dir}" "chown root:wheel; chmod 644"
 
     $__ rcctl stop resolvd
     $__ rcctl disable resolvd

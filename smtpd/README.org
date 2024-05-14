@@ -1,0 +1,5 @@
+#+TITLE: Rspamd - Spam Filtering System
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://www.rspamd.co][Rspamd]] which is used as the last line of defense against spam. It is also used as DKIM signing agent. I have to admin that the configuration of Rspamd is quite complex but most of the default should work out of the box. Note that in order for DKIM and ARC and DMARC to work properly. One have to setup your DNS properly. with a TXT entry for each of them.
