@@ -38,20 +38,24 @@ __sync_controller_mode() {
 
     # creating sym links to /etc/ssl
     for d in $_cert_path; do
-        ln -sf "$d" /etc/ssl/${d##*/}
-        cp -f /etc/ssl/${d##*/}/privkey.pem /etc/ssl/private/$(hostname).key
-        cp -f /etc/ssl/${d##*/}/fullchain.pem /etc/ssl/$(hostname).crt
+        local target=$(echo ${d##*/} | sed 's/-.*//')
+        ln -sf "$d" /etc/ssl/$target
+        cp -f /etc/ssl/${target}/privkey.pem /etc/ssl/private/$(hostname).key
+        cp -f /etc/ssl/${target}/fullchain.pem /etc/ssl/$(hostname).crt
+        chmod 640 /etc/ssl/private/$(hostname).key
+        chmod 644 /etc/ssl/$(hostname).crt
     done
     # copy certs to target eshub/eshuc
     #   check if user temail exist.
      user info -e temail ||  _message 'Error' 'User: temail does exists in the system'
      local _home=$(user info temail | grep dir | cut -f2)
      for t in $_target_server; do
+        local target=$(echo ${p##*/} | sed 's/-.*//')
          for p in $_cert_path; do
              _message 'Info' "Copying certficate: $p to host: $t"
              scp -q -i "${_home}"/.ssh/id_eshu.key\
                  -F "${_home}"/.ssh/config\
-                 "$p"/*.pem temail@$t:~/certificates/"${p##*/}"
+                 "$p"/*.pem temail@$t:~/certificates/"${target}"
          done
          _message 'Info' "launching sync on host: $t"
          # launch sync on target server
@@ -75,10 +79,10 @@ __sync_mail_mode() {
     fi
     # copy file to /etc/ssl
     for d in $_domains; do
-        _message 'Info' 'Moving domains certificate: ${d##*/} to /etc/ssl/'
+        _message 'Info' "Moving domains certificate: ${d##*/} to /etc/ssl/"
         cp -Rf "$d" /etc/ssl/
-        chmod -R 644 /etc/ssl/"$d"/*
-        chmod -R 640 /etc/ssl/"$d"/priv*
+        chmod -R 644 /etc/ssl/"${d##*/}"/*
+        chmod -R 640 /etc/ssl/"${d##*/}"/priv*
     done
     # clean temp folder
     rm -rf "$_home"/certificates/*
