@@ -24,4 +24,5 @@ secure_ip = [
                ,"2a03:6000:6f67:622::235"
             ];
 static_dir = "${WWWDIR}";
+bind_socket = "*:11334"
 password = "$2$cugy7qu1qarybugdd44md9yrtseop9ie$nzkare1t8h7gx8m9fh6fde9yasdrdhhtda4yfwkhdw41oqcjid1b";

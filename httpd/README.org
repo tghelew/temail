@@ -7,4 +7,5 @@ This part is about configuring [[https://man.openbsd.org/httpd][httpd]] for my m
 | source          | source port | target       | target port |
 |-----------------+-------------+--------------+-------------|
 | admin.ghelew.ch |         443 | internal     |        8080 |
+| mail.ghelew.ch  |         443 | internal     |        8080 |
 | spam.ghelew.ch  |         443 | mail servers |       11334 |

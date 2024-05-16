@@ -5,7 +5,10 @@ filters = "chartable,dkim,regexp,fuzzy_check";
 tempdir = "/tmp/rspamd";
 
 neighbours {
-    server1 { host = "@twin@:11334"; }
+   eshub  { host = "https://spam.ghelew.ch:443";
+            path = "/eshub/"; }
+   eshuc  { host = "https://spam.ghelew.ch:443";
+            path = "/eshuc/"; }
 }
 
 local_addrs = [192.168.0.0/16

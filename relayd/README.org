@@ -1,0 +1,13 @@
+#+TITLE: RELAYD Configuration
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://man.openbsd.org/relayd.conf][Relayd]], which dynamically redirect incoming connections to a target host(s). It can be run as a load balancer, application layer gateway or transparent proxy. In my case I'll use it as both a transparent proxy and load balancer.
+
+List of mappings:
+| incoming conn   | port | target host(s)      | target port | mode                |
+|-----------------+------+---------------------+-------------+---------------------|
+| admin.ghelew.ch |  443 | internal httpd      |        8080 | proxy               |
+| mail.ghelew.ch  |  443 | internal httpd      |        8080 | proxy               |
+| spam.ghelew.ch  |  443 | mail servers rspamd |       11334 | proxy/load balencer |
+| localhost       | 2525 | mail servers        |          25 | relay load balencer |
