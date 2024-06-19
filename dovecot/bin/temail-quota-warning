@@ -1,0 +1,27 @@
+#!/bin/env ksh
+# Purpose: Mail to user when his/her quota exceeds specified percentage.
+# Reference: http://wiki2.dovecot.org/Quota/Configuration#Quota_warnings
+
+_percent=${1}
+_user=${2}
+_cmd=/usr/local/libexec/dovecot/deliver
+
+# Use "plugin/quota=maildir:User quota:noenforcing" for maildir quota.
+cat << EOF | $_cmd -d ${_user} -o "plugin/quota=dict:User quota::noenforcing:proxy::quota"
+From: noreply@$(hostname)
+Subject: Warning: Your mailbox is now ${_percent}% full.
+
+Your mailbox is now ${_percent}% full, please clean up some mails for further incoming mails.
+EOF
+
+# Send a copy to postmaster@ if mailbox is greater than or equal to 95% full.
+if [ ${_percent} -ge 95 ]; then
+   local _domain="${_user%@*}"
+    cat << EOF | $_cmd -d postmaster@${_domain} -o "plugin/quota=dict:User quota::noenforcing:proxy::quota"
+From: noreply@$(hostname)
+Subject: Mailbox Quota Warning: ${_percent}% full, ${_user}
+
+Mailbox (${_user}) is now ${_percent}% full, please clean up some mails for
+further incoming mails.
+EOF
+fi
