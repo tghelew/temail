@@ -31,6 +31,9 @@ __sync_controller_mode() {
             for p in $(find $_config_dir/live -type d -mindepth 1 -maxdepth 1 -ctime 1); do
                 _cert_path="${_cert_path}${_cert_path:+ }$p"
             done
+            for p in $(find $_config_dir/custom -type d -mindepth 1 -maxdepth 1 -ctime 1); do
+                _cert_path="${_cert_path}${_cert_path:+ }$p"
+            done
         else
             _message 'Error' 'Certbot configuration folder cannot be found.'
         fi
@@ -39,12 +42,17 @@ __sync_controller_mode() {
     # creating sym links to /etc/ssl
     for d in $_cert_path; do
         local target=$(echo ${d##*/} | sed 's/-.*//')
+        local host=$(hostname)
         ln -sf "$d" /etc/ssl/$target
-        cp -f /etc/ssl/${target}/privkey.pem /etc/ssl/private/$(hostname).key
-        cp -f /etc/ssl/${target}/fullchain.pem /etc/ssl/$(hostname).crt
-        chmod 640 /etc/ssl/private/$(hostname).key
-        chmod 644 /etc/ssl/$(hostname).crt
+        if [[ "$target" == "${host#*.}" ]]; then
+            cp -f /etc/ssl/${target}/privkey.pem /etc/ssl/private/$host.key
+            cp -f /etc/ssl/${target}/fullchain.pem /etc/ssl/$host.crt
+            chmod 640 /etc/ssl/private/$host.key
+            chmod 644 /etc/ssl/$host.crt
+        fi
     done
+    # Move local certificate
+
     # copy certs to target eshub/eshuc
     #   check if user temail exist.
      user info -e temail ||  _message 'Error' 'User: temail does exists in the system'

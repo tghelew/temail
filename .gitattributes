@@ -2,3 +2,4 @@
 .gitattributes !filter !diff
 *.key filter=git-crypt diff=git-crypt
 dns/**/rndc.conf filter=git-crypt diff=git-crypt
+certificate/certs/**/privkey.pem filter=git-crypt diff=git-crypt

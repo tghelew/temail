@@ -27,6 +27,7 @@ function _deploy_certbot {
     local _target_log_dir=/var/log/certbot
     _message '1info' 'Creating required folders...'
     $__ mkdir -p $_target_dir/{etc,db}
+    $__ mkdir -p $_target_dir/etc/custom
     $__ mkdir -p $_target_log_dir
     $__ chmod -R 755  $_target_dir $_target_log_dir
     _message '1info' 'Creating required folders done!'
@@ -38,6 +39,13 @@ function _deploy_certbot {
     check=$(_check_diff -s "$_source_dir" -t "$_target_dir" -f "*.ini")
     _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
     _message '1info' 'Copying files done!'
+
+    _message '1info' 'Copying custom certificates...'
+    _source_dir=./certs
+    _target_dir="/var/certbot/etc/custom"
+    check=$(_check_diff -s "$_source_dir" -t "$_target_dir" -f "*")
+    _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
+    _message '1info' 'Copying custom certificates done!'
 
     _message '1info' 'Copying scripts...'
     local check=""

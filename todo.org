@@ -21,6 +21,7 @@
 
 
 * Medium
+** TODO Certificate manage external certificates (i.e: bought)
 ** TODO Add tmux plugins resurrect
 ** TODO setup dnssec bind
 ** DONE configure syslog to send logs to controller on mail servers
