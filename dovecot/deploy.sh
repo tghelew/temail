@@ -54,6 +54,14 @@ __deploy_scripts() {
     _apply_changes 1 "$check" "$_source_dir" "${_target_dir}" "chmod +x;chown root:bin"
 
    _message '1info' "Deploying bin scripts done!"
+   _message '1info' "Setting cron jobs!"
+    # crontab
+    cat <<-EOF | _update_crontab 2 'dovecot' 'root'
+    #-----------------------------------------------dovecot Start----------------------------------------------------------------
+    0~10     23       3~22      *       *       -ns  /usr/local/bin/temail-archive-mails -f /etc/dovecot/teamil-archive-mails.conf
+    #-----------------------------------------------dovecot End------------------------------------------------------------------
+EOF
+   _message '1info' "Setting cron jobs done!"
 
    _message '1info' "Deploying sieve scripts..."
    _source_dir=./sieve

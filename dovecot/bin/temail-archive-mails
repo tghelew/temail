@@ -1,0 +1,212 @@
+#!/usr/bin/env ksh
+set -eo pipefail
+
+_prgname=${0##*/}
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag=$_prgname
+   local facility='user.info'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+       >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+      exit 1
+   else
+       printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+   fi
+}
+
+_run_checks () {
+    set -A missing ""
+
+    local i=1
+    for c in $@; do
+        if ! type "${c}" 2>&1 >/dev/null; then
+            missing[$i]="$c"
+            (( i += 1 ))
+        fi
+    done
+    if [ ${#missing[@]} -gt 1 ]; then
+        _message "Error" "Missing program(s): ${missing[*]}"
+    fi
+}
+
+_run_checks "wc sed grep cut doveadm dateadd dateconv"
+
+_set_parameters_from_file() {
+    [ -r "$_config_file" ]  || _message "error" "Config File: $_config_file is not readable!"
+
+    typeset -i required_param=$(grep -Ei 'users|boxes_to_archive' "$_config_file" | wc -l )
+    [[ "${required_param:-0}" > 1 ]] || \
+        _message "Error" "Config file: $_config_file misses required parameters: users and/or boxes_to_archive"
+
+    local boxes users
+
+    users="$(sed -En '/[uU][sS][eE][rR][sS]/p' "$_config_file" | cut -d '=' -f2)"
+    [ "x$users" = "x" ] || \
+        for u in ${users[@]}; do
+            _users[ ${#_users[@]} ]="$u"
+        done
+    boxes="$(sed -En '/[bB][oO][xX][eE][sS]_[tT][oO]_[aA][rR][cC][hH][iI][vV][eE]/p' "$_config_file" | cut -d '=' -f2)"
+    [ "x$boxes" = "x" ] || \
+        for b in ${boxes[@]}; do
+            _boxes_to_archive[ ${#_boxes_to_archive[@]} ]="$b"
+        done
+
+    _archive_start_date="$(sed -En '/[aA][rR][cC][hH][iI][vV][eE]_[sS][tT][aA][rR][tT]_[dD][aA][tT][eE]/p' \
+                            "$_config_file" | cut -d '=' -f2)"
+    _archive_root_path="$(sed -En '/[aA][rR][cC][hH][iI][vV][eE]_[rR][oO][oO][tT]_[pP][aA][tT][hH]/p' \
+                            "$_config_file" | cut -d '=' -f2)"
+    _retention="$(sed -En '/[rR][eE][tT][eE][nN][tT][iI][oO][nN]/p' "$_config_file" | cut -d '=' -f2)"
+
+    [ "x$_users" = "x" ] && _message "error" "At least one user must be defined!"
+    [ "x$_boxes_to_archive" = "x" ] && _message "error" "At least one mailbox to archive must be set!"
+}
+
+# Define from what - relatine to now - date in the past the archiving should be started
+# use dateadd(1) notation
+_archive_start_date="${_archive_start_date:- -6mo}"
+# The path in dovecote mail folder to put the subfolders to
+_archive_root_path="${_archive_root_path:-Archive}"
+# The paths of the folders to be processed during archive
+set -A _boxes_to_archive
+set -A _users
+
+# Define until when - relative to now - date mails should be archived, mails younger that date that date are omitted
+# use dateadd(1) notation
+_retention="-3mo"
+
+_usage=$(cat <<-EOF
+     Usage:
+       $_prgname  -u User ...  -s Archive Start Date -p Archive Root Path  -b Boxes to Archive ...  -r Retention
+       $_prgname -f /path/to/config
+
+       Archive mails in {Boxes to Archive} starting from the { Archive Start Date } to the {Retention} period into a mailbox folder
+       automaticaly created with the format {Archive Root Path}.year.month.
+       {Archive Start Date} and {Retention} are date span in the form suitable for dateadd(1).
+       Note that {Boxes to Archive} support wildcard as supported by doveadm(1) commands
+
+       Config file may defined in place of the argument list. The configuration file is a standard UNIX config file where the
+       following keys are used:
+            - users = user1 user2 user3,...
+            - archive_start_date = -6mo
+            - archive_root_path = Archive
+            - boxes_to_archive = box1* box2 ...
+            - retention = -3mo
+EOF
+         );
+
+trap "print \"$_usage\"" ERR
+
+_parameters=""
+_config_file=""
+while getopts u:s:f:p:b:r: p; do
+    case $p in
+        u)
+            _parameters="$_parameters${_parameters:+ }u"
+            _users="$_users${_users:+ }$OPTARG"
+            ;;
+        s)
+            _parameters="$_parameters${_parameters:+ }s"
+            _archive_start_date="$OPTARG"
+            ;;
+        p)
+            _parameters="$_parameters${_parameters:+ }p"
+            _archive_root_path="$OPTARG"
+            ;;
+        b)
+            _parameters="$_parameters${_parameters:+ }b"
+            _boxes_to_archive[ ${#_boxes_to_archive[@]} ]="$OPTARG"
+            ;;
+        r)
+            _parameters="$_parameters${_parameters:+ }r"
+            _retention="$OPTARG"
+            ;;
+        f)
+            _config_file="$OPTARG"
+            ;;
+        *)
+            print "Unknown parameter: $p"
+            print "$usage"
+            exit 1
+
+    esac
+done
+shift $(( $OPTIND - 1 ))
+
+# Validation
+if [[ -n "$_config_file" && -n "$_parameters" ]]; then
+    _message "error" "Config file cannot be use with other parameter(s)!"
+elif [[ -z "$_parameters" && -z "$_config_file"  ]]; then
+    _message "error" "Either -f or -u -s -p -b -r parameters must be set!"
+elif [[ -z "$_parameters" && ! -r "$_config_file" ]]; then
+    _message "error" "config file: $_config_file is not readable and no other parameters are provided!"
+fi
+# Get parameters from file if any
+if [ -r "$_config_file" ]; then
+    _set_parameters_from_file
+
+fi
+
+if [[ "x$_users" == "x" ]]; then
+    _message "error" "At least one user must be defined!"
+elif [[ ${#_boxes_to_archive[@]} -le 0 ]]; then
+    _message "error" "At least one mailbox to archive must be set!"
+fi
+
+
+for _user in ${_users[@]}; do
+
+    _message "info" "Archiving mails for user: $_user"
+    # Checking if the user exists
+    if ! $(doveadm user "$_user" >/dev/null 2>&1); then
+        _message "Warning" "User: $_user does not exists! Skipping"
+        continue
+    fi
+    # Search for all existing subfolders in _boxes_to_archive
+    set -A _boxes ""
+
+    for box in ${_boxes_to_archive[@]}; do
+        for list in $(doveadm mailbox list -u ${_user} ${box}); do
+            _boxes[ ${#_boxes[@]} ]="$list"
+        done
+    done
+
+    _enddate=$(dateadd $(date '+%Y-%m-%d')  "${_retention}" )
+    _enddate_epoch=$(dateconv $_enddate -f '%s')
+
+    isodateiter=$(dateadd $(date '+%Y-%m-%d')  "${_archive_start_date}")
+
+    while [[ $(dateconv $isodateiter -f '%s') -le $_enddate_epoch ]]; do
+    local year=$(echo $isodateiter| cut -d- -f1)
+    local month=$(echo $isodateiter| cut -d- -f2)
+
+    local since="${year}-${month}-01"
+    local before="$(dateadd  "$isodateiter" +1mo)"
+
+    for box in ${_boxes[@]}; do
+    _message "info" "checking for mails in ${box} since ${since} AND before ${before}"
+    if [ $(doveadm search -u ${_user} MAILBOX ${box} SENTBEFORE ${before} SENTSINCE ${since}  | wc -l) -gt 0 ]; then
+        local archive="${_archive_root_path}.${year}.${month}"
+        doveadm mailbox status -u ${_user} messages ${archive} >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "creating new archive Folder ${archive}"
+            doveadm mailbox create -u ${_user} ${archive}
+            doveadm mailbox subscribe -u ${_user} ${archive}
+        fi
+        # Move the mails to archive subfolder
+        # echo "# Move the mails to archive subfolder"
+        _message "info" "Move mails to ARCHIVE folder ${archive}"
+        doveadm move -u ${_user} ${archive} mailbox ${box} SENTSINCE ${since} SENTBEFORE ${before}
+    fi
+    done
+
+    isodateiter="${before}"
+    done
+done
