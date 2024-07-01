@@ -120,7 +120,7 @@ case "$-" in
 	export FPATH=/etc/ksh/autoload
 	function _load {
 		local p="${1}"; local rc=$?;
-		if [ -x  ]; then
+		if [ -x "${p}" ]; then
 		   . "${p}"
 		fi
 		return $rc
