@@ -1,8 +1,8 @@
 DEPLOY = deploy.sh
 HOSTNAME != hostname -s
 # PARAMS ?=
-TARGETS = terminal pf syslog user dns certificate database httpd dovecot spamd redis rspamd smtpd relayd
-CONTROLLER = terminal pf syslog user dns certificate database httpd redis smtpd relayd
+TARGETS = terminal pf syslog user dns certificate database httpd dovecot spamd redis rspamd smtpd relayd sogo
+CONTROLLER = terminal pf syslog user dns certificate database httpd redis smtpd relayd sogo
 MAIL = terminal pf syslog user dns httpd database dovecot spamd redis rspamd smtpd
 
 # C: controller M: mail
@@ -29,8 +29,5 @@ mail: $(MAIL)
 $(TARGETS):
 	@echo "deploying $@"
 	@./$@/$(DEPLOY) "$(PARAMS)"
-
-clean:
-	@rm -f $(TARGETS_FILE) >/dev/null 2>&1
 
 .PHONY: all controller mail clean $(TARGETS)

@@ -1,0 +1,5 @@
+#+TITLE: SoGo - Web based Groupware Server
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://www.sogo.nu/][SoGo]] which is used for Web based email, calendar, contact. Configuration is properly documented in [[https://www.sogo.nu/files/docs/SOGoInstallationGuide.html][Sogo Support pages]].

@@ -21,19 +21,20 @@
 - [ ] Create operational scripts: temailctl -f /etc/tmailctl.conf
 
 ## Medium
-- [x] Certificate manage external certificates (i.e: bought)
-- [x] configure syslog to send logs to controller on mail servers
-- [x] move domain ghelew.net to slave
+- [x] certs: Certificate manage external certificates (i.e: bought)
+- [x] syslog: configure syslog to send logs to controller on mail servers
+- [x] dns: migrate domain ghelew.net to secondary dns servers 
 - [x] dovecot: Setup script for quota management
 - [x] dovecot: Setup script for archived email in specific folder
 - [ ] pf: fix deployment issue where the temp folder doesn't exist on first run
-- [ ] Add tmux plugins resurrect
-- [ ] setup dnssec bind
+- [ ] pf: create a anchor.conf file to properly restart all anchors
+- [ ] terminal: Add tmux plugins resurrect
+- [ ] dns: setup dnssec bind
 - [ ] dovecot: Setup script for junk mail cleanup script
 - [ ] dovecot: Setup master users
 
 
 
 ## Low
-- [ ] Setup history command using fzf
-- [ ] Enable dns over tls in bind
+- [ ] terminal: Setup history command using fzf
+- [ ] dns: Enable dns over tls in bind
