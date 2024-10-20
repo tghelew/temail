@@ -50,7 +50,7 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
     | OpenBSD Amsterdam | eshuc.ghelew.ch |     1 | 1GB |  46.23.93.235 | 2a03:6000:93f4:632::235 | secondary mx |
 
 
-*** Setup
+*** Components
 
 1. [[./init/][OpenBSD Installation]]
 2. [[./terminal/][Terminal Setting]]
@@ -62,7 +62,36 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 8. [[./database/][PostgreSQL Setting]]
 9. [[./httpd/][HTTPD Setting]]
 10. [[./dovecot/README.org][Dovecot Setting]]
-12. [[./spamd/][Spamd Setting]]
-13. [[./redis/][Redis Setting]]
-14. [[./rspamd/][Rspamd Setting]]
-15. [[./smtpd/][smtpd Setting]]
+11. [[./spamd/][Spamd Setting]]
+12. [[./redis/][Redis Setting]]
+13. [[./rspamd/][Rspamd Setting]]
+14. [[./smtpd/][smtpd Setting]]
+15. [[./sogo/][Sogo]]
+
+*** Deployment
+  #+begin_src sh
+# Clone this repository
+git clone https://github.com/tghelew/temail ~/projects/
+
+# Copy the whole content to the target servers
+scp -r ~/projects/temail thierry@eshua:~/
+scp -r ~/projects/temail thierry@eshub:~/
+scp -r ~/projects/temail thierry@eshuc:~/
+
+# Ssh into the controller server
+ssh thierry@eshua
+cd ~/temail && make PARAMS='C' controller
+
+# Ssh into the mail server(s)
+ssh thierry@eshu[bc]
+cd ~/temail && make PARAMS='M' mail
+  #+end_src
+*** Upgrade
+I always forget how to upgrade OpenBSD which should be done as soon as possible so for each machine:
+#+begin_src sh
+doas sysupgrade
+# Wait for system to be online
+doas sysmerge
+# delete the old file as per the upgrade guide
+doas pkg_add -u
+#+end_src
