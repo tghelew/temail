@@ -257,7 +257,7 @@ esac
 _message '1Info' 'Initializing/Restarting named services'
 if [[ $($__ rcctl ls on | grep -i "$service") == "$service" ]]; then
     _message '2info' 'Named service already configured, reloading'
-    $__ rndc -q reload >/dev/null 2>&1
+    $__ rcctl restart "$service" >/dev/null 2>&1
 else
     _message '2info' 'Initializing named services...'
     [[ "$_type" == "C*" ]] && $__ update-named-adblock

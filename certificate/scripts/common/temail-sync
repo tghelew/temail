@@ -17,7 +17,6 @@ _message () {
        logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
    fi
 }
-# Check where am i
 __sync_controller_mode() {
     _message 'Info' "Starting sync in Controller mode..."
     local _cert_path=${RENEWED_LINEAGE:-$1}
@@ -52,14 +51,13 @@ __sync_controller_mode() {
         fi
     done
     # Move local certificate
-
     # copy certs to target eshub/eshuc
     #   check if user temail exist.
      user info -e temail ||  _message 'Error' 'User: temail does exists in the system'
      local _home=$(user info temail | grep dir | cut -f2)
      for t in $_target_server; do
-        local target=$(echo ${p##*/} | sed 's/-.*//')
          for p in $_cert_path; do
+             local target=$(echo ${p##*/} | sed 's/-.*//')
              _message 'Info' "Copying certficate: $p to host: $t"
              scp -q -i "${_home}"/.ssh/id_eshu.key\
                  -F "${_home}"/.ssh/config\
@@ -70,8 +68,9 @@ __sync_controller_mode() {
          ssh -i "${_home}"/.ssh/id_eshu.key\
              -F "${_home}"/.ssh/config\
              temail@$t "doas /usr/local/bin/temail-sync"
-         done
+     done
 
+    #TODO: _message 'Info' "Restarting Required Services..."
     _message 'Info' "Controller mode sync done!"
 }
 
@@ -97,6 +96,7 @@ __sync_mail_mode() {
     _message 'Info' "Mail mode sync done!"
 }
 
+# Check where am i
 if type certbot 2>&1 >/dev/null; then
     __sync_controller_mode "$@"
 else

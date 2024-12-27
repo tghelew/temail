@@ -34,6 +34,9 @@ _check=""
 _source_dir="./pf"
 _target_dir="/etc/pf"
 
+
+[ -d $_target_dir ] || $__ mkdir -p $_target_dir
+
 _message "1info" 'Deploying tables, anchors, and scripts...'
 _check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
 _apply_changes 1 "$_check" "$_source_dir" "${_target_dir}" "chown root:wheel"
@@ -56,5 +59,6 @@ cat <<-EOF | _update_crontab 1 'pf' 'root'
 #----------------------------------------------pf End--------------------------------------------------------
 EOF
 _message 'Info' 'PF setup completed!'
+_message 'WARNING' 'Make sure to reload all anchor (e.g.: spamd)'
 
 cd "${_curpwd}"

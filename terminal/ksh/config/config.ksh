@@ -20,7 +20,7 @@ export HISTFILE=$HOME/.local/share/ksh/history
 export HISTSIZE=10000
 export HISTCONTROL=ignoredups:ignorespace
 
-export TMUX_HOME=$HOME/tmux
+export TMUX_HOME=$HOME/.local/share/tmux
 
 [ -d /var/postgresql ] && export PGDATA=/var/postgresql/data
 [ -d /var/postgresql ] && export PSQL_HISTORY=$HOME/.local/share/psql/history

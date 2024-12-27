@@ -32,6 +32,7 @@
 - [ ] dns: setup dnssec bind
 - [ ] dovecot: Setup script for junk mail cleanup script
 - [ ] dovecot: Setup master users
+- [ ] temail-spf-walk: add support for %{i}
 
 
 

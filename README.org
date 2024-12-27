@@ -95,3 +95,5 @@ doas sysmerge
 # delete the old file as per the upgrade guide
 doas pkg_add -u
 #+end_src
+Make sure to restart any upgraded packages... just in case.
+~Do not forget to reload pf anchor spamd~

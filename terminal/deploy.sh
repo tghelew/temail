@@ -16,15 +16,17 @@ cd "${_scriptdir}"
 . ../assets/scripts/global.sh
 
 
-_run_checks "bash mkdir cd rm"
 
 # tmux
 _message "info" 'Initializing/Updating terminal...'
 _add_packages "${_packages}"
 _message "1info" 'Initializing/Updating tmux...'
+
+_run_checks "bash mkdir cd rm"
+
 mkdir -p ~/.local/share/tmux
 _source_dir="./tmux"
-_target_dir="$HOME/tmux"
+_target_dir="$HOME/.local/share/tmux"
 
 check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
 _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"

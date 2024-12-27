@@ -315,11 +315,11 @@ case "$1" in
 
     C*) # Controller
         _type="controller"
+        cat "./$_type/httpd.conf" > "${_source_dir_temp}/$_httpd_conf"
+        __deploy_httpd "${_source_dir_temp}"
         __deploy_errors
         __deploy_php
-        cat "./$_type/httpd.conf" > "${_source_dir_temp}/$_httpd_conf"
         __deploy_apps
-        __deploy_httpd "${_source_dir_temp}"
     ;;
     M*) # Mail
         _type="mail"

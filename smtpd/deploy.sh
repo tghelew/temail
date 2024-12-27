@@ -105,7 +105,7 @@ _start_service() {
 }
 
 # smtpd
-_message "info" 'Initializing/Updating rspamd...'
+_message "info" 'Initializing/Updating smtpd...'
 
 
 _run_checks "smtpd smtpctl"

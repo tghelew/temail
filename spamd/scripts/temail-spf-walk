@@ -179,16 +179,29 @@ _process_address() {
 # parameter: the domain to spf walk
 _process_spf() {
    local domain="$1"
-   typeset -l  spf=""
+   typeset -l  spf="" spf_result=""
    # Get spf record
    _message "info" "Retrieving spf record for domain: $domain"
-   spf=$(_dns_lookup $no TXT $domain | \
-       grep spf | \
-       sed -e 's/"//g' -e 's/v=spf[0-9] //g' -re 's/([0-9a-f:\.]+)[[:space:]]+([0-9a-f:\.]+)/\1\2/g')
-   [ $_debug -eq $yes ] && \
-       _message "debug" "Retieved spf: $spf"
 
-   _process_domain $spf
+   spf_result=$(_dns_lookup $no TXT $domain)
+   if [ "x$spf_result" == "x" ]; then
+       [ $_debug -eq $yes ] && \
+           _message "debug" "No spf record found"
+   else
+
+       spf=$(echo "$spf_result"| \
+           grep -s spf | \
+           sed -e 's/"//g' -e 's/v=spf[0-9] //g' -re 's/([0-9a-f:\.]+)[[:space:]]+([0-9a-f:\.]+)/\1\2/g')
+       [ $_debug -eq $yes ] && \
+           _message "debug" "Retrieved spf: $spf"
+
+       if [[ "x$spf" == "x" ]]; then
+           [ $_debug -eq $yes ] && \
+               _message "debug" "Warning: No spf Retrieved"
+       else
+           _process_domain $spf
+       fi
+   fi
 }
 
 # Query domain for mx record
@@ -222,64 +235,69 @@ _process_domain() {
     typeset -i wmacro=$no
 
     # Process query
-    for mech in $result; do
-        spec=""
-        cidr=""
-        case $mech in
-            include*|redirect*)
-                spec=$(echo $mech | cut -sd ':' -f2)
-                if [ "x$spec" == "x" ]; then
-                    spec=$(echo $mech | cut -sd '=' -f2)
+    if [[ "x$result" == "x" ]]; then
+        [ $_debug -eq $yes ] && \
+            _message "debug" "no domain provided"
+    else
+        for mech in $result; do
+            spec=""
+            cidr=""
+            case $mech in
+                include*|redirect*)
+                    spec=$(echo $mech | cut -sd ':' -f2)
                     if [ "x$spec" == "x" ]; then
-                        _message "Warning" "Include mechanism or Redirect etected but no domain specification found"
+                        spec=$(echo $mech | cut -sd '=' -f2)
+                        if [ "x$spec" == "x" ]; then
+                            _message "Warning" "Include mechanism or Redirect etected but no domain specification found"
+                        fi
+                    elif [[ "$spec" == *%* ]]; then
+                        [ $_debug -eq $yes ] && \
+                            _message "debug" "Domain specification:$spec contains macro which are not supported"
+                        wmacro=$yes
                     fi
-                elif [[ "$spec" == *%* ]]; then
-                    [ $_debug -eq $yes ] && \
-                        _message "debug" "Domain specification:$spec contains macro which are not supported"
-                    wmacro=$yes
-                fi
-                [ $wmacro -eq $no ] && _process_spf $spec
-                ;;
+                    [ $wmacro -eq $no ] && _process_spf $spec
+                    ;;
 
-            a*|mx*)
-                local cmd=""
-                spec=$(echo $mech | cut -sd ':' -f2)
-                if [ "x$spec" == "x" ]; then
-                    spec=$domain
-                elif [[ "$spec" == *%* ]]; then
-                    [ $_debug -eq $yes ] && \
-                        _message "debug" "Domain specification:$spec contains macro which are not supported"
-                    wmacro=$yes
-                elif [[ "$spec" == */* ]]; then
-                    spec=$(echo $spec | cut -d '/' -f1)
-                    cidr=$(echo $spec | cut -sd '/' -f2)
-                fi
-                if [ $wmacro -eq $no ]; then
-                    if [[ $mech == "mx*" ]]; then
-                        cmd=_process_mx
-                    else
-                        cmd=_process_address
+                a*|mx*)
+                    local cmd=""
+                    spec=$(echo $mech | cut -sd ':' -f2)
+                    if [ "x$spec" == "x" ]; then
+                        spec=$domain
+                    elif [[ "$spec" == *%* ]]; then
+                        [ $_debug -eq $yes ] && \
+                            _message "debug" "Domain specification:$spec contains macro which are not supported"
+                        wmacro=$yes
+                    elif [[ "$spec" == */* ]]; then
+                        spec=$(echo $spec | cut -d '/' -f1)
+                        cidr=$(echo $spec | cut -sd '/' -f2)
                     fi
-                    ips=$($cmd $spec | tr ' ' "$cidr\n")
-                    _process_ips $ips
-                fi
-                ;;
-            ip4*|ip6*)
-                local spec=$(echo $mech | cut -d ':' -f 2-)
-                local proto=$(echo $_proto | sed -r 's/ipv?//g')
-                if [ "$spec" == "$mech" ]; then
-                    _message "Warning" "Include mechanism or Redirect etected but no domain specification found"
-                elif [[ "$proto" == *${_proto}* ]]; then
-                    _process_ips $spec
-                fi
-                ;;
-            *)
-                [ $_debug -eq $yes ] && \
-                    _message "debug" "Un-processed mechanism or modifier: $mech"
+                    if [ $wmacro -eq $no ]; then
+                        if [[ $mech == "mx*" ]]; then
+                            cmd=_process_mx
+                        else
+                            cmd=_process_address
+                        fi
+                        ips=$($cmd $spec | tr ' ' "$cidr\n")
+                        _process_ips $ips
+                    fi
+                    ;;
+                ip4*|ip6*)
+                    local spec=$(echo $mech | cut -d ':' -f 2-)
+                    local proto=$(echo $_proto | sed -r 's/ipv?//g')
+                    if [ "$spec" == "$mech" ]; then
+                        _message "Warning" "Include mechanism or Redirect detected but no domain specification found"
+                    elif [[ "$proto" == *${_proto}* ]]; then
+                        _process_ips $spec
+                    fi
+                    ;;
+                *)
+                    [ $_debug -eq $yes ] && \
+                        _message "debug" "Un-processed mechanism or modifier: $mech"
 
-                ;;
-        esac
-    done
+                    ;;
+            esac
+        done
+    fi
 }
 
 # Validate input parameters
