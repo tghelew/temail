@@ -78,6 +78,53 @@ EOF
 
 }
 
+_deploy_http() {
+
+    typeset -l hname='' hpattern=''
+
+    local _source_dir_tmp=$(mktemp -d /tmp/temail.XXXXXXX.rspamd)
+    trap "$(_clean $_source_dir_tmp)" ERR EXIT
+
+    local check=""
+    local _target_dir=/etc/nginx/conf.d
+    hname="www"
+    hpattern="${hname}.conf"
+    _source_dir="."
+
+    if [[ ! -d "${_target_dir}" ]]; then
+        $__ mkdir -p "${_target_dir}"
+    fi
+
+    $__ find "${_source_dir}" -type f -iname "$hpattern" -exec cat {} + >> "${_source_dir_tmp}/rspam.conf"
+    check=$(_check_diff -s "$_source_dir_tmp" -t "${_target_dir}" -f "*.conf")
+    _apply_changes 2 "$check" "$_source_dir_tmp" "${_target_dir}"
+
+    _message "2info" 'Checking nginx Configuration...'
+    local _tmp="${_source_dir_tmp}/check"
+
+    $__ nginx -t > "$_tmp" 2>&1
+    if [ -s ${_tmp} ]; then
+        _show 3 $_tmp
+        grep -qi "ok" $_tmp || \
+        _message "3Error" "Configuration check failed!"
+        rm -f "$_tmp"
+    fi
+    _message "2info" 'Checking nginx Configuration done!'
+
+
+    if [ "$($__ rcctl get nginx flags)" == "NO" ]; then
+        _message '1info' 'Enabling nginx service'
+        $__ rcctl enable nginx >/dev/null
+        $__ rcctl start nginx >/dev/null
+    else
+        _message '1info' '(Re)Starting nginx service'
+        $__ rcctl restart nginx >/dev/null
+    fi
+
+    _message "1info" 'Deploying nginx Configuration done!'
+
+}
+
 _start_service() {
     local tmp=$(mktemp /tmp/temail.XXXXXXX.rspamd)
 
@@ -111,17 +158,16 @@ _start_service() {
 # rspamd
 _message "info" 'Initializing/Updating rspamd...'
 
-_add_packages $_packages
-
-_run_checks "rspamd rspamc rspamadm"
-
 case "$_type" in
     M*) # Mail Server
+        _run_checks "rspamd rspamc rspamadm"
+        _add_packages $_packages
         _deploy_config
         _start_service
     ;;
     C*) # Controller
-        _message 'Error' 'Not supported on Controller!'
+        _run_checks "nginx"
+        _deploy_http
     ;;
     *) # Error
         _message 'Error' 'Unknow type of deploy command'

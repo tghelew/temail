@@ -36,7 +36,7 @@ _message () {
    fi
 }
 
-trap "$_clean" ERR EXIT
+trap "$_clean $_block" ERR EXIT
 
 _out="/var/named/zones/root.zone"  # zone file
 

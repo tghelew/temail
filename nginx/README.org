@@ -1,0 +1,11 @@
+#+TITLE: HTTPD Configuration
+#+author: Thierry Ghelew
+
+* Summary
+This part is about configuring [[https://man.openbsd.org/httpd][httpd]] for my mail server and certificate validation. As the configuration is self explanatory have a look at [[https://man.openbsd.org/httpd.conf.5][httpd.conf]] for more details as to the meaning of those file. Proxy and load balancing is performed thanks to [[https://man.openbsd.org/relayd.conf][Relayd]] which either forward request either internally to httpd or externally to my mail server (for rspamd).
+
+| source          | source port | target       | target port |
+|-----------------+-------------+--------------+-------------|
+| admin.ghelew.ch |         443 | internal     |        8080 |
+| mail.ghelew.ch  |         443 | internal     |        8080 |
+| spam.ghelew.ch  |         443 | mail servers |       11334 |
