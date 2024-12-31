@@ -19,6 +19,7 @@
 - [x] setup relayd
 - [ ] setup sogo
 - [ ] Create operational scripts: temailctl -f /etc/tmailctl.conf
+- [ ] Rewrite httpd for ngnix (due to proxy-pass)
 
 ## Medium
 - [x] certs: Certificate manage external certificates (i.e: bought)
@@ -30,7 +31,7 @@
 - [ ] pf: create a anchor.conf file to properly restart all anchors
 - [ ] terminal: Add tmux plugins resurrect
 - [ ] dns: setup dnssec bind
-- [ ] dovecot: Setup script for junk mail cleanup script
+- [x] dovecot: Setup script for junk mail cleanup script
 - [ ] dovecot: Setup master users
 - [ ] temail-spf-walk: add support for %{i}
 

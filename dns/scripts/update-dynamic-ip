@@ -1,0 +1,121 @@
+#!/usr/bin/env ksh
+# This sript update one A entry in a given zone.
+# This mainly to handle dynamic ip from my isp
+set -euo pipefail
+# set -xv
+
+_scriptname="${0##*/}"
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='named'
+   local facility='user.info'
+   local mpattern="%s: %s\n"
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+        >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+       printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+   fi
+}
+
+_run_checks () {
+    set -A missing ""
+    typeset -i i=1
+    for c in $@; do
+        if ! type "${c}" 2>&1 >/dev/null; then
+            missing[$i]="$c"
+            (( i += 1 ))
+        fi
+    done
+    if [ ${#missing[@]} -gt 1 ]; then
+        _message "Error" "Missing program(s): ${missing[*]}"
+    fi
+}
+
+_usage() {
+   cat <<-EOF
+usage: $_scriptname [-f] [-z zonename] [-a record] new_ip
+  Description:
+        Update A record in a given zone dynamically using nsupdate(1).
+        Check that the record has changed beforehand.
+        The new ip must be in the form X.X.X.X.X whis must be a valid external ip address.
+
+
+       -f force the update
+       -z the zone/domain to update (e.g. ghelew.ch)
+       -a the A record to update (e.g. tumba)
+       -h Show this help.
+EOF
+}
+
+_run_checks "dig ping nsupdate"
+
+local _zonename
+local _record
+local _key=/var/named/keys/servers.key
+local _newip
+local _domain
+local _force=n
+local _currentip
+# Check parameter
+while getopts fhz:a: param;do
+    case $param in
+        f)
+            _force=y
+        ;;
+        h)
+            _usage && exit 0
+        ;;
+        z)
+            _zonename="$OPTARG"
+        ;;
+        a)
+           _record="$OPTARG"
+        ;;
+        ?)
+            _usage && exit 2
+    esac
+done
+shift $(($OPTIND - 1))
+_newip="$@"
+
+# Validate provided variables
+[ -z "$_newip" ]      && _message "Error" 'the new ip cannot be empty'
+[ -z "$_record" ]      && _message "Error" 'the record/hostname cannot be empty'
+_domain="$_record.$_zonename"
+_currentip=$(dig +short $_domain)
+[ -n $_currentip ] || _message "Error" "FQDN: $_domain does not exits"
+
+[[ "$_currentip" == "$_newip" ]] && [[ "$[_force]" == "n" ]] && \
+    _message "Info" "Ip address of domain: $_domain did not change... nothing to do." && \
+    exit 0
+
+
+type nsupdate 2>&1 >/dev/null || _message "Error" 'Cannot find nsupdate program!'
+[ -r "$_key" ]                || _message "Error" "TSIG key in path $key is not readable!"
+
+# Add a dns txt entry
+cat <<-EOF | nsupdate -lk "$_key" >/dev/null 2>&1
+zone $_zonename
+prereq yxrrset $_domain IN A
+update delete $_domain 3600 IN A $_currentip
+update add $_domain 3600 IN A $_newip
+send
+EOF
+
+
+if [ $? == 0 ] ;then
+    typeset -i  _wait=$((10 * 60))
+    _message "Info" "dns update succeded waiting $_wait seconds for the propagation."
+    sleep $_wait
+else
+    _message "Error" "dns update failed. Check dns log for additional details."
+fi
