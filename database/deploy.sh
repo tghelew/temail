@@ -84,6 +84,20 @@ __deploy_common() {
     _message "1info" 'Deploying common configurations done!'
 }
 
+__deploy_system() {
+
+    _target_dir=/etc
+    _source_dir=./system/
+
+    $__ mkdir -p "${_target_dir}"
+
+    _message "1info" 'Deploying sysctl configurations...'
+    check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
+    _apply_changes 1 "$check" "$_source_dir" "${_target_dir}"
+
+    _message "1info" 'Deploying sysctl configurations done!'
+}
+
 __deploy_custom() {
 
     _target_dir=/var/postgresql/data
@@ -108,11 +122,13 @@ case "$1" in
         __deploy_initdb
         _custom_dir=./controller
         __deploy_custom
+        __deploy_system
     ;;
     M*) # Mail Server
         __deploy_common
         _custom_dir=./mail
         __deploy_standby
+        __deploy_system
     ;;
     *) # Error
         _message 'Error' 'Unknow type of deploy command'

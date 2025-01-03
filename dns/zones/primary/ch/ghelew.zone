@@ -1,7 +1,7 @@
 $ORIGIN ghelew.ch.
 $TTL 86400
 ghelew.ch.	172800	IN	SOA	ns1.he.net. hostmaster.ghelew.ch. (
-					2024070413	;serial
+					2025010300	;serial
 					10800		;refresh 3h
 					1800		;retry 30min
 					36000000	;expire 1000h
@@ -27,6 +27,7 @@ mail				3600	IN	CNAME	eshua
 smtp				3600	IN	CNAME	eshua
 imap				3600	IN	CNAME	eshua
 sieve				3600	IN	CNAME	eshua
+blog				3600	IN	CNAME	eshua
 
 admin				3600	IN	CNAME	eshua
 spam				3600	IN	CNAME	eshua

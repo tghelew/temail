@@ -17,9 +17,9 @@
 - [x] basic smtp
 - [x] setup redis
 - [x] setup relayd
-- [ ] setup sogo
+- [x] setup sogo
 - [ ] Create operational scripts: temailctl -f /etc/tmailctl.conf
-- [ ] Rewrite httpd for ngnix (due to proxy-pass)
+- [x] Rewrite httpd for ngnix (due to proxy-pass)
 
 ## Medium
 - [x] certs: Certificate manage external certificates (i.e: bought)
@@ -34,9 +34,9 @@
 - [x] dovecot: Setup script for junk mail cleanup script
 - [ ] dovecot: Setup master users
 - [ ] temail-spf-walk: add support for %{i}
+- [ ] Add nvim script
 
 
 
 ## Low
 - [ ] terminal: Setup history command using fzf
-- [ ] dns: Enable dns over tls in bind

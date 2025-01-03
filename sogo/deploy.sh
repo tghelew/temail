@@ -108,22 +108,98 @@ _deploy_sql() {
     _message "1info" "Deploy sql file done!"
 }
 
-_start_service() {
-    _message "1info" "Checking Configuration"
+_deploy_http() {
+
+    _message "1info" "Deploying nginx config"
+    typeset -l hname='' hpattern=''
+
+    local _source_dir_tmp=$(mktemp -d /tmp/temail.XXXXXXX.rspamd)
+    trap "$(_clean $_source_dir_tmp)" ERR EXIT
+
+    local check=""
+    local _target_dir=/etc/nginx/conf.d
+    hname="www"
+    hpattern="${hname}.conf"
+    _source_dir="./http"
+
+    if [[ ! -d "${_target_dir}" ]]; then
+        $__ mkdir -p "${_target_dir}"
+    fi
+
+    $__ find "${_source_dir}" -type f -iname "$hpattern" -exec cat {} + >> "${_source_dir_tmp}/sogo.conf"
+    check=$(_check_diff -s "$_source_dir_tmp" -t "${_target_dir}" -f "*.conf")
+    _apply_changes 2 "$check" "$_source_dir_tmp" "${_target_dir}"
+
+    _message "2info" 'Checking nginx Configuration...'
+    local _tmp="${_source_dir_tmp}/check"
+
+    set +e
+    $__ nginx -t > "$_tmp" 2>&1
+    if [ -s ${_tmp} ]; then
+        _show 3 $_tmp
+        grep -qi "ok" $_tmp || \
+        _message "3Error" "Configuration check failed!"
+        rm -f "$_tmp"
+    fi
+    _source_dir="/usr/local/lib/GNUstep/SOGo/WebServerResources"
+    _target_dir="/var/www/lib/sogo/www"
+    _message "2info" 'Maybe copying web resources from SoGo...'
+    [[ ! -d {_target_dir} ]] && $__ mkdir -p "$_target_dir"
+
+    check=$(_check_diff -s "$_source_dir" -t "${_target_dir}" -f "*")
+    _apply_changes 3 "$check" "$_source_dir_tmp" "${_target_dir}"
+
+    _message "2info" 'Maybe copying web resources from SoGo done'
+
+    _message "2info" 'Checking nginx Configuration done!'
+
+
+    if [ "$($__ rcctl get nginx flags)" == "NO" ]; then
+        _message '1info' 'Enabling nginx service'
+        $__ rcctl enable nginx >/dev/null
+        $__ rcctl start nginx >/dev/null
+    else
+        _message '1info' '(Re)Starting nginx service'
+        $__ rcctl restart nginx >/dev/null
+    fi
+
+    _message "1info" 'Deploying nginx Configuration done!'
 }
 
-# smtpd
-_message "info" 'Initializing/Updating sogo...'
+_start_service() {
+    if [ "$($__ rcctl get sogod flags)" == "NO" ]; then
+        _message '1info' 'Enabling sogod service'
+        $__ rcctl enable sogod >/dev/null
+        $__ rcctl start sogod >/dev/null
+    else
+        _message '1info' '(Re)Starting sogo service'
+        $__ rcctl restart sogod >/dev/null
+    fi
+    if [ "$($__ rcctl get memcached flags)" == "NO" ]; then
+        _message '1info' 'Enabling memcached service'
+        $__ rcctl enable memcached >/dev/null
+        $__ rcctl start memcached >/dev/null
+    else
+        _message '1info' '(Re)Starting memcached service'
+        $__ rcctl restart memcached >/dev/null
+    fi
+
+    }
+# SoGo
+_message "info" 'Initializing/Updating SoGo...'
 
 
 _run_checks "psql"
 
+_add_packages $_packages
+
 case "$_type" in
     C*) # Controller
-        _add_packages $_packages
-        _init_db
-        _deploy_sql
+         _init_db
+         _deploy_sql
         _deploy_config "./conf"
+         _deploy_http
+        _start_service
 
     ;;
     M*) # Mail
@@ -134,5 +210,5 @@ case "$_type" in
     ;;
 
 esac
-_message "info" 'Initializing/Updating sogo done!'
+_message "info" 'Initializing/Updating SoGo done!'
 cd "${_curpwd}"
