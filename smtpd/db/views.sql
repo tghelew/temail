@@ -10,8 +10,8 @@ CREATE OR REPLACE VIEW  v_smtpd_alias AS
                 and active = 't'
             UNION
             SELECT
-                address
-                ,goto
+                LOWER(address)
+                ,LOWER(goto)
             FROM
                 alias
             WHERE

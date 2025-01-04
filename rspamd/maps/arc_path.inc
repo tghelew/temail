@@ -1,1 +1,2 @@
-ghelew.ch       /var/rspamd/keys/dkim.key
+ghelew.ch       /var/rspamd/keys/arc_ghelew.key
+ghedesei.ch     /var/rspamd/keys/arc_ghedesei.key

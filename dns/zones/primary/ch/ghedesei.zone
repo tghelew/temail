@@ -1,15 +1,32 @@
 $ORIGIN ghedesei.ch.
 $TTL 86400
 ghedesei.ch.	172800	IN	SOA	ns1.he.net. hostmaster.ghelew.ch. (
-					2024041704	;serial
+					2025010501	;serial
 					10800		;refresh 3h
 					1800		;retry 30min
 					36000000	;expire 1000h
 					3600	)	;minimum
 
 
-ghedesei.ch.			86400	IN	NS	ns1.he.net.
-ghedesei.ch.			86400	IN	NS	ns2.he.net.
-ghedesei.ch.			86400	IN	NS	ns3.he.net.
-ghedesei.ch.			86400	IN	NS	ns4.he.net.
-ghedesei.ch.			86400	IN	NS	ns5.he.net.
+		            86400	IN	NS	ns1.he.net.
+		            86400	IN	NS	ns2.he.net.
+		            86400	IN	NS	ns3.he.net.
+		            86400	IN	NS	ns4.he.net.
+		            86400	IN	NS	ns5.he.net.
+
+                86400 IN  MX  10 eshub.ghelew.ch.
+                86400 IN  MX  10 eshuc.ghelew.ch.
+
+
+;;---------------------------------------------------------------------------------------------------------------------------------
+;; DKIM ARC DMARC SPF
+;;---------------------------------------------------------------------------------------------------------------------------------
+202501_arc._domainkey  1800   IN TXT ( "v=DKIM1; k=rsa;" "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDGJuWh/HZVjW7zqbno8z6iIEiRugcHxgignQlRccdmKCafod+E7Z7Q9UamF9c9198QPnoqxPu9VLGArW8HkxPujNPAYPpredBpwXGgAt1yEO2yJjoAjjaDjctgpV11ap1YJODnmYVMQ50P+0nfyO9X/fUxjvL5qcVbwbgvB09YvqQIDAQAB")
+
+202501_dkim._domainkey 1800   IN TXT ( "v=DKIM1; k=rsa;" "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCct//SrQYDGGoAl4lBr8EbijtZllOfwuozXymVHjhk+GOoCdpn/hmh9nRLmyaSSOJXLdMUMSbnNvihJnqg+MnqMLUwA4LJC3Fpus2Lti3ajjh9t7yNQgjcX1Lr6Sc6cQIU5iQMMbXoiRyJN2TW86l2JnvioHeih4d7CrcTqF2UCQIDAQAB")
+
+
+_dmarc				         86400  IN TXT "v=DMARC1; p=reject; rua=mailto:postmaster@ghedesei.ch; pct=100; adkim=s; aspf=s"
+
+@                      86400  IN  TXT "v=spf1 include:ghelew.ch ~all"
+

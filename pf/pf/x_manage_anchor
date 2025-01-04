@@ -1,0 +1,103 @@
+#! /usr/bin/env ksh
+set -eo pipefail
+typeset -i yes=0 no=1
+
+_scriptname="${0##*/}"
+_temp_file="$(mktemp /tmp/temail.XXXXXXX.anchor)"
+_debug=$no
+_anchor_dir=""
+_anchors=""
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='pf-manage-anchors'
+   local facility='user.notice'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+      logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]]  && >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]] && printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+   fi
+}
+
+trap "[ -f $_temp_file ] && rm -rf $_temp_file" ERR EXIT KILL TERM
+
+_usage() {
+   cat <<-EOF
+usage: $_scriptname [-hfD] [-d anchor dir]  [anchor ...]
+  Description:
+      Load a pf anchor if not already loaded or if -f is set. If no anchor
+      is profided and anchor dir is defined, $_scriptname will walk through
+      all *.conf file in the folder and load the anchor named after the 
+      filename without the extentioon as described above.
+        
+
+  Parameters:
+       -f Force reload of anchor[s]
+       -h
+       -D Show debug message stdin or stderr.
+       -d path to the anchors directory to scan
+EOF
+}
+
+while getopts Dd:f param;do
+    case $param in
+        h)
+            _usage && exit 0
+        ;;
+        D)
+            _debug=$yes
+        ;;
+        f)
+            _force=$yes
+        ;;
+        d)
+            _anchor_dir="$OPTARG"
+        ;;
+        ?)
+            _usage && exit 2
+        ;;
+    esac
+done
+shift $(($OPTIND - 1))
+_anchors="$@"
+
+_manage_anchor(){
+  local _filepath="$1"
+  local _filename="${1##*/}"
+  local _force=${2:-1} #no
+  local _anchor="${_filename%%.*}"
+  [ -r "$_filepath" ] || return
+  _message "info" "managing anchor file $_filepath... with name $_anchor"
+  pfctl -s Anchors > $_temp_file
+  local _anchor_loaded=$(grep -qi "$_anchor" $_temp_file && echo $yes)
+  if  [[  $_anchor_loaded == $yes && $_force == $yes ]]; then
+    _message "info" "Reloading anchor $_anchor"
+    pfctl -a $_anchor -f $_filepath >/dev/null 2>&1
+  elif [[  $_anchor_loaded != $yes ]] ; then
+    _message "info" "Loading anchor $_anchor"
+    pfctl -a $_anchor -f $_filepath >/dev/null 2>&1
+  else
+    _message "debug" "Anchor $_anchor already loaded"
+  fi
+  _message "info" "managing anchor file $_filename done"
+}
+
+if [[ -d "$_anchor_dir" ]]; then
+  for f in `find "$_anchor_dir" -type f -iname *.conf`;do
+    _manage_anchor $f $_force
+  done
+elif [[ -n "$_anchors" ]]; then
+  for f in "$_anchors";do
+    _manage_anchor $f $_force
+  done
+fi 
+    
+  

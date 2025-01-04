@@ -74,7 +74,7 @@ $CONF['smtp_type'] = 'starttls';
 // SMTP Client
 // Hostname (FQDN) of the server hosting Postfix Admin
 // Used in the HELO when sending emails from Postfix Admin
-$CONF['smtp_client'] = '';
+$CONF['smtp_client'] = 'smtp.ghelew.ch';
 
 // Encrypt - how passwords are stored/hashed in the database.
 //
@@ -167,8 +167,8 @@ $CONF['domain_in_mailbox'] = 'NO';
 // Specify your default values below. Quota in MB.
 $CONF['aliases'] = '60';
 $CONF['mailboxes'] = '60';
-$CONF['maxquota'] = '5120';
-$CONF['domain_quota_default'] = '1024';
+$CONF['maxquota'] = '10240';
+$CONF['domain_quota_default'] = '8192';
 
 // Quota
 // When you want to enforce quota for your mailbox users set this to 'YES'.

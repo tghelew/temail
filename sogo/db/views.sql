@@ -42,3 +42,20 @@ CREATE OR REPLACE VIEW  v_sogo_users_ghelew_ch AS
         c_domain = 'ghelew.ch';
 
 GRANT SELECT ON v_sogo_users_ghelew_ch TO sogo;
+
+
+CREATE OR REPLACE VIEW  v_sogo_users_ghedesei_ch AS
+       SELECT
+        c_uid
+        ,mail
+        ,c_name
+        ,c_password
+        ,c_domain
+        ,c_cn
+        ,c_aliases
+       FROM
+        v_sogo_users
+       WHERE
+        c_domain = 'ghedesei.ch';
+
+GRANT SELECT ON v_sogo_users_ghedesei_ch to SOGO;

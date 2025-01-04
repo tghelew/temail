@@ -57,7 +57,7 @@ _deploy_config() {
     __deploy_config_section "sogo" "$source" "/etc/sogo/"
 }
 
-_init_db() {
+init_db() {
     _message "1info" "Maybe creating database user..."
     local tmp=$(mktemp /tmp/temail.XXXXXXX.sogo)
     trap "$(_show_clean 2 $tmp)" ERR

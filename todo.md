@@ -20,6 +20,8 @@
 - [x] setup sogo
 - [ ] Create operational scripts: temailctl -f /etc/tmailctl.conf
 - [x] Rewrite httpd for ngnix (due to proxy-pass)
+- [x] test failure of eshub or eshuc
+- [ ] migrate mails
 
 ## Medium
 - [x] certs: Certificate manage external certificates (i.e: bought)
@@ -27,10 +29,7 @@
 - [x] dns: migrate domain ghelew.net to secondary dns servers 
 - [x] dovecot: Setup script for quota management
 - [x] dovecot: Setup script for archived email in specific folder
-- [ ] pf: fix deployment issue where the temp folder doesn't exist on first run
-- [ ] pf: create a anchor.conf file to properly restart all anchors
-- [ ] terminal: Add tmux plugins resurrect
-- [ ] dns: setup dnssec bind
+- [x] pf: create a anchor.conf file to properly restart all anchors
 - [x] dovecot: Setup script for junk mail cleanup script
 - [ ] dovecot: Setup master users
 - [ ] temail-spf-walk: add support for %{i}
@@ -39,4 +38,3 @@
 
 
 ## Low
-- [ ] terminal: Setup history command using fzf

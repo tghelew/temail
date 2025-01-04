@@ -53,7 +53,7 @@ __handle_dynamic_zone(){
                         _message "${mtab}info" "Reloading zone: $z ..."
                         $__ rndc reload $z >/dev/null 2>1&
                         $__ rndc thaw $z  >/dev/null 2>1&
-                        _message "${mtab}info" "Reloading zone: $z done!"
+
                         ;;
                     *)
                         ;;

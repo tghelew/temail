@@ -48,7 +48,22 @@ trap "$_clean" ERR EXIT
 
 _out="/var/named/zones/adblock.zone"  # zone file
 
-[ -f "$_out" ] || _message "Error" "Cannot alter file: $_out"
+[ -f "$_out" ] || cat<<-EOF>"$_out"
+$TTL 1d                         ;default TTL
+@                   172800	IN	SOA	eshua.ghelew.ch. hostmaster.ghelew.ch. (
+                    2025010600	;serial
+                    7d		    ;refresh
+                    24h		;retry
+                    36000000	;expire
+                    7d	)	    ;minimum
+
+                            IN  NS eshua.ghelew.ch.
+                            IN  NS eshub.ghelew.ch.
+                            IN  NS eshuc.ghelew.ch.
+
+;;--Domain to filter
+EOF
+
 
 sed -e '1,/^;;--Domain/ !d' "$_out" > "$_header"
 sed -e '1,/^;;--Domain/ d' "$_out" > "$_old_block"
@@ -107,12 +122,17 @@ else
     sed -Ei "1,/;refresh/ s/(^[[:space:]]+)[0-9]+([[:space:]]+;serial.*$)/\1$_serial_new\2/" "$_header"
     cat $_header $_block > $_out
     chown _bind:_bind $_out
-    named-checkzone adblock $_out
+    z=adblock
+    named-checkzone $z $_out
     if $(rndc -q status >/dev/null 2>&1); then
+      rndc freeze $z 2>1& >/dev/null
       rndc -q reload adblock >/dev/null 2>&1
+      rndc thaw $z  >/dev/null 2>1&
     elif $(rcctl ls on | grep -qi isc_named); then
       rcctl restart isc_named
       sleep 5
-      rndc -q reload >/dev/null 2>&1
+      rndc freeze $z 2>1& >/dev/null
+      rndc -q reload adblock >/dev/null 2>&1
+      rndc thaw $z  >/dev/null 2>1&
     fi
 fi
