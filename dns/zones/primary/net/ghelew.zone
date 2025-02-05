@@ -1,22 +1,27 @@
 $ORIGIN ghelew.net.
 $TTL 86400
 ghelew.net. 172800 IN SOA ns1.he.net. hostmaster.ghelew.ch. (
-                    2024042202  ;serial
+                    2025011101  ;serial
                     10800       ;refresh 3h
                     1800        ;retry 30min
                     36000000    ;expire 1000h
                     3600    )   ;minimum
 
 
-ghelew.net.                 86400   IN  NS      ns1.he.net.
-ghelew.net.                 86400   IN  NS      ns2.he.net.
-ghelew.net.                 86400   IN  NS      ns3.he.net.
-ghelew.net.                 86400   IN  NS      ns4.he.net.
-ghelew.net.                 86400   IN  NS      ns5.he.net.
+                             86400   IN  NS      ns1.he.net.
+                             86400   IN  NS      ns2.he.net.
+                             86400   IN  NS      ns3.he.net.
+                             86400   IN  NS      ns4.he.net.
+                             86400   IN  NS      ns5.he.net.
 
-mail.ghelew.net.            3600    IN  A       46.101.244.21
-hermes.ghelew.net.          3600    IN  CNAME   mail.ghelew.net.
-smtp.ghelew.net.            3600    IN  CNAME   mail.ghelew.net.
 
-ghelew.net.                 3600    IN  TXT     "v=spf1 a mx ip4:46.101.244.21 -all"
-ghelew.net.                 3600    IN  MX      10 mail.ghelew.net.
+
+                             86400   IN  MX  10 eshub.ghelew.ch.
+                             86400   IN  MX  10 eshuc.ghelew.ch.
+;;---------------------------------------------------------------------------------------------------------------------------------
+;; DKIM ARC SPF
+;;---------------------------------------------------------------------------------------------------------------------------------
+dkim._domainkey              1800    IN CNAME  dkim-ghelew-net.ghelew.ch.
+arc._domainkey               1800    IN CNAME  arc-ghelew-net.ghelew.ch.
+
+@                            86400   IN  TXT "v=spf1 include:ghelew.ch ~all"

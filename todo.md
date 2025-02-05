@@ -19,9 +19,14 @@
 - [x] setup relayd
 - [x] setup sogo
 - [ ] Create operational scripts: temailctl -f /etc/tmailctl.conf
+  - [ ] Config parser in toml
+  - [ ] monitoring agent
+  - [ ] monitoring command
 - [x] Rewrite httpd for ngnix (due to proxy-pass)
 - [x] test failure of eshub or eshuc
-- [ ] migrate mails
+- [x] migrate mails
+- [ ] SOGo Fix multi-domain support & Preference 
+- [ ] Create backup scripts
 
 ## Medium
 - [x] certs: Certificate manage external certificates (i.e: bought)
@@ -31,10 +36,10 @@
 - [x] dovecot: Setup script for archived email in specific folder
 - [x] pf: create a anchor.conf file to properly restart all anchors
 - [x] dovecot: Setup script for junk mail cleanup script
-- [ ] dovecot: Setup master users
-- [ ] temail-spf-walk: add support for %{i}
-- [ ] Add nvim script
+~~- [x] dovecot: Setup master users~~
+- [x] Add nvim script
 
 
 
 ## Low
+- [ ] temail-spf-walk: add support for %{i}

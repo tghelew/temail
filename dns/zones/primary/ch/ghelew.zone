@@ -1,7 +1,7 @@
 $ORIGIN ghelew.ch.
 $TTL 86400
 ghelew.ch.	172800	IN	SOA	ns1.he.net. hostmaster.ghelew.ch. (
-					2025010504	;serial
+					2025020100	;serial
 					10800		;refresh 3h
 					1800		;retry 30min
 					36000000	;expire 1000h
@@ -20,6 +20,9 @@ eshua				3600	IN	A	93.177.66.222
 eshub				3600	IN	A	46.23.94.97
 eshuc				3600	IN	A	46.23.93.235
 
+tumba				1800	IN	A 	178.237.91.88
+
+
 mx1					86400   IN	CNAME   eshub
 mx2					86400   IN	CNAME   eshuc
 
@@ -27,23 +30,26 @@ mail				3600	IN	CNAME	eshua
 smtp				3600	IN	CNAME	eshua
 imap				3600	IN	CNAME	eshua
 sieve				3600	IN	CNAME	eshua
-blog				3600	IN	CNAME	eshua
 
 admin				3600	IN	CNAME	eshua
 spam				3600	IN	CNAME	eshua
 db   				3600	IN	CNAME	eshua
-database    3600	IN	CNAME	eshua
+database            3600	IN	CNAME	eshua
 
+freebsd			    1800    IN  CNAME   tumba
+blog				3600	IN	CNAME	tumba
+git 				3600	IN	CNAME	tumba
+books 				3600	IN	CNAME	tumba
 
 ;;---------------------------------------------------------------------------------------------------------------------------------
 ;; SSH PUBLIC KEYS
 ;;---------------------------------------------------------------------------------------------------------------------------------
-eshua         86400  IN SSHFP 1 1 73f241a23dac59160f14f315acd2a5a7275f9c7e
-eshua         86400  IN SSHFP 1 2 fa2c669f43a6aa121e5f2ae74c6bf9cec1104f05a6f4244ce6e4b11a4a5a7123
-eshua         86400  IN SSHFP 3 1 dd785edaa54e0c3b7423b07a68445310efd5b711
-eshua         86400  IN SSHFP 3 2 9bb890db932a9cdf08b5f49b0ff43fc34f158c11b0cc4e0f14c9d90d6bddd4aa
-eshua         86400  IN SSHFP 4 1 5e167777107ef2aefc12fd74bf7a6f8c99ade614
-eshua         86400  IN SSHFP 4 2 06d7322712cc0a186b52f94dad09cd8ce497f88f9151a23ba10cea3969ee16c6
+eshua         		86400  IN SSHFP 1 1 73f241a23dac59160f14f315acd2a5a7275f9c7e
+eshua         		86400  IN SSHFP 1 2 fa2c669f43a6aa121e5f2ae74c6bf9cec1104f05a6f4244ce6e4b11a4a5a7123
+eshua         		86400  IN SSHFP 3 1 dd785edaa54e0c3b7423b07a68445310efd5b711
+eshua         		86400  IN SSHFP 3 2 9bb890db932a9cdf08b5f49b0ff43fc34f158c11b0cc4e0f14c9d90d6bddd4aa
+eshua         		86400  IN SSHFP 4 1 5e167777107ef2aefc12fd74bf7a6f8c99ade614
+eshua         		86400  IN SSHFP 4 2 06d7322712cc0a186b52f94dad09cd8ce497f88f9151a23ba10cea3969ee16c6
 
 eshub 				86400  IN SSHFP 1 1 5690ce09a36d78149f1c760afcce739d8f107fed
 eshub 				86400  IN SSHFP 1 2 609a70fce51c0505d2c016accd9efc69691f076bdc59bcc18d58bd9d7514f6b2
@@ -63,10 +69,14 @@ eshuc  				86400  IN SSHFP 4 2 36f7190a1e857913a2b8bf93f0201ecb76d279a9c6d228fa6
 ;;---------------------------------------------------------------------------------------------------------------------------------
 ;; DKIM ARC DMARC SPF
 ;;---------------------------------------------------------------------------------------------------------------------------------
+dkim-ghelew-net		   1800   IN CNAME   202405_dkim._domainkey
+arc-ghelew-net		   1800   IN CNAME   202405_arc._domainkey
+
+
 202405_arc._domainkey  1800   IN TXT ( "v=DKIM1; k=rsa;" "p=IGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCudv7+NosZzWHymN6OFQ7SupJXnLeNooVThGMKLea1mp8vkWz2Ui1PPaFWK76hIFC1+IUkoa6cvX+qdqdUHRq3fqagioYbBNRlIKd1FlJ8TLfmVLM4bwp0CiNw6C+3TI1s9Hmes7PP3KUe/I4YDDraftUt7P7QksVH2spjDT+jHwIDAQAB" )
 
 202405_dkim._domainkey 1800   IN TXT ( "v=DKIM1; k=rsa;" "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCXYMw5fAN6lvGsTQJtzA9PyzYpsW2mDHUDxp2A4nhJn9SPt7+6au5DwlXMiVR14QP/uo6nO9PNE9pAF5zW+Eeks5uINfU83wDIvhB4TKEFN8u5uvph0yxyRGefGlnSwFocwkeAXEjU3EFxF8lRSuOeBTlMQBEIUdRuYSb6OxVgfwIDAQAB" )
 
 _dmarc				         86400  IN TXT "v=DMARC1; p=reject; rua=mailto:postmaster@ghelew.ch; pct=100; adkim=s; aspf=s"
 
-@					             86400  IN TXT "v=spf1 mx -all"
+@					         86400  IN TXT "v=spf1 mx -all"

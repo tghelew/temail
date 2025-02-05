@@ -1,0 +1,113 @@
+#!/usr/bin/env ksh
+set -eo pipefail
+
+_prgname=${0##*/}
+PATH="$PATH:/usr/local/bin"
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag=$_prgname
+   local facility='user.info'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+       >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+       logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+      exit 1
+   else
+       printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+   fi
+}
+
+_run_checks () {
+    set -A missing ""
+
+    local i=1
+    for c in $@; do
+        if ! type "${c}" 2>&1 >/dev/null; then
+            missing[$i]="$c"
+            (( i += 1 ))
+        fi
+    done
+    if [ ${#missing[@]} -gt 1 ]; then
+        _message "Error" "Missing program(s): ${missing[*]}"
+    fi
+}
+
+_get_all_users () {
+    #Query mailbox to get all users
+    psql -U vmail -d vmail -qXA -F '\n' -c "SELECT username FROM mailbox;" | \
+        grep -Ev "username|rows" > ${_user_file}
+
+    [ -s "${_user_file}" ] && \
+        while read -pu user; do
+            _users="$_users${_users:+ }$user"
+        done < "${_user_file}"
+}
+
+_run_checks "wc sed grep cut doveadm psql temail-sa-learn"
+
+set -A _users
+_user_file=$(mktemp /tmp/temail-process-junks.XXXXXX)
+
+# Define until when - relative to now - date mails should be archived, mails younger that date that date are omitted
+# use dateadd(1) notation
+_usage=$(cat <<-EOF
+     Usage:
+       $_prgname  [ -u User] ...
+
+       Process Junk folder by reporting them as spam and moving them into Trash folder
+
+       -u the username(s) from which the process is performed all user if empty.
+
+EOF
+         );
+
+
+trap "[ -f ${_user_file} ] && rm -f ${_user_file}" ERR EXIT
+
+while getopts u: p; do
+    case $p in
+        u)
+            _users="$_users${_users:+ }$OPTARG"
+            ;;
+        *)
+            print "Unknown parameter: $p"
+            print "$usage"
+            exit 1
+
+    esac
+done
+shift $(( $OPTIND - 1 ))
+
+# Validation
+
+if [[ "x$_users" == "x" ]]; then
+    _get_all_users
+fi
+
+
+for _user in ${_users[@]}; do
+
+    _message "info" "Looking for Junk mails for user: $_user"
+    # Checking if the user exists
+    if ! $(doveadm user "$_user" >/dev/null 2>&1); then
+        _message "Warning" "User: $_user does not exists! Skipping"
+        continue
+    fi
+
+    # For each mail in junk folder learn spam
+
+    for m in `doveadm -f tab fetch -u ${_user} guid MAILBOX 'Junk' | grep -v guid`;do
+        doveadm fetch -u "${_user}" text GUID "$m" | \
+            temail-sa-learn "spam" "${_user}" >/dev/null 2>&1
+    done
+
+    # move Junk mailbox to Trash folder.
+    _message "info" "Moving Junk mails into Trash for user: ${_user}"
+    doveadm move -u ${_user} "Trash" MAILBOX "Junk" "all"
+done

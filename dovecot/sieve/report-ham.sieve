@@ -8,8 +8,12 @@ if string "${mailbox}" "Trash" {
   stop;
 }
 
+if string "${mailbox}" "Junk" {
+  stop;
+}
+
 if environment :matches "imap.user" "*" {
   set "username" "${1}";
 }
 
-pipe :copy "temail-sa-learn" [ "spam", "${username}" ];
+pipe :copy "temail-sa-learn" [ "ham", "${username}" ];

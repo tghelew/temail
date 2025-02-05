@@ -58,7 +58,8 @@ __deploy_scripts() {
     # crontab
     cat <<-EOF | _update_crontab 2 'dovecot' 'root'
     #-----------------------------------------------dovecot Start----------------------------------------------------------------
-    0~10     23       3~22      *       *       -ns  /usr/local/bin/temail-archive-mails -f /etc/dovecot/teamil-archive-mails.conf
+    0~10     23       3~22      *       *       -ns  /usr/local/bin/temail-archive-mails -f /etc/dovecot/temail-archive-mails.conf
+    0~10     5~23     *         *       *       -ns  /usr/local/bin/temail-process-junks
     #-----------------------------------------------dovecot End------------------------------------------------------------------
 EOF
    _message '1info' "Setting cron jobs done!"
