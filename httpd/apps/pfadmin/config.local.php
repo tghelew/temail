@@ -167,8 +167,8 @@ $CONF['domain_in_mailbox'] = 'NO';
 // Specify your default values below. Quota in MB.
 $CONF['aliases'] = '60';
 $CONF['mailboxes'] = '60';
-$CONF['maxquota'] = '5120';
-$CONF['domain_quota_default'] = '1024';
+$CONF['maxquota'] = '10240';
+$CONF['domain_quota_default'] = '2048';
 
 // Quota
 // When you want to enforce quota for your mailbox users set this to 'YES'.
@@ -183,8 +183,6 @@ $CONF['quota_level_med_pct'] = 55;
 $CONF['quota_level_high_pct'] = 90;
 
 $CONF['transport_default'] = 'virtual';
-
-
 
 // Alias Control
 // Postfix Admin inserts an alias in the alias table for every mailbox it creates.

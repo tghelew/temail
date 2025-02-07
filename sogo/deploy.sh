@@ -57,7 +57,7 @@ _deploy_config() {
     __deploy_config_section "sogo" "$source" "/etc/sogo/"
 }
 
-init_db() {
+_init_db() {
     _message "1info" "Maybe creating database user..."
     local tmp=$(mktemp /tmp/temail.XXXXXXX.sogo)
     trap "$(_show_clean 2 $tmp)" ERR
@@ -142,7 +142,7 @@ _deploy_http() {
         rm -f "$_tmp"
     fi
     _source_dir="/usr/local/lib/GNUstep/SOGo/WebServerResources"
-    _target_dir="/var/www/lib/sogo/www"
+    _target_dir="/var/www/lib/sogo/WebServerResources"
     _message "2info" 'Maybe copying web resources from SoGo...'
     [[ ! -d {_target_dir} ]] && $__ mkdir -p "$_target_dir"
 

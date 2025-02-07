@@ -12,7 +12,7 @@ CREATE OR REPLACE VIEW  v_sogo_users AS
 
        )
        SELECT
-        m.username AS c_uid
+        m.local_part AS c_uid
         ,m.username as mail
         ,m.username AS c_name
         ,m.password AS c_password

@@ -7,3 +7,4 @@
          (ssh-deploy-script . (lambda() (let ((default-directory ssh-deploy-root-remote))(shell-command "make all")))))))
 
 ;;; .dir-locals.el ends here
+;;;
