@@ -1,2 +1,3 @@
 ghelew.ch       202405_dkim
-ghelew.ch       202501_dkim
+ghedesei.ch     202501_dkim
+ghedesei.net    202501_dkim
