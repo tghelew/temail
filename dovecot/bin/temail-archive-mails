@@ -1,5 +1,5 @@
 #!/usr/bin/env ksh
-set -eo pipefail
+# set -eo pipefail
 
 _prgname=${0##*/}
 PATH="$PATH:/usr/local/bin"
