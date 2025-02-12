@@ -17,3 +17,8 @@ Host eshuc*
     IdentityFile ~/.ssh/id_eshu.key
     Port 2203
     Protocol 2
+
+Host *openbsd.amsterdam
+    IdentityFile ~/.ssh/id_eshu.key
+    Port 31415
+    Protocol 2

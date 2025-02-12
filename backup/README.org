@@ -1,0 +1,9 @@
+#+TITLE: Backup
+#+author: Thierry Ghelew
+
+* Summary
+This part is about creating daily backup script. The idea is to backup volatile data such as:
+- Database
+- Redis
+- dovecot
+Everything else can be redeploy through temail.

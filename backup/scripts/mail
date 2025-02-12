@@ -1,0 +1,107 @@
+#! /usr/bin/env ksh
+set -eo pipefail
+PATH="$PATH:/usr/local/bin"
+typeset -i yes=0 no=1
+
+_scriptname="${0##*/}"
+_debug=$no
+set -A _backup_remote_servers "s22vm32@wingman1.openbsd.amsterdam" "s11vm22@wingman1.openbsd.amsterdam"
+set -A _backup_my_servers "temail@tumba.ghelew.ch"
+_tmp_dir=$(mktemp -d /tmp/temail.XXXXXXX.backup)
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='temail-backup'
+   local facility='user.notice'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+      logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]]  && >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]] && printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+   fi
+}
+
+_usage() {
+   cat <<-EOF
+usage: $_scriptname  [-hD]
+  Description:
+        Backup databases to backup servers usign pg_dumpall
+
+  Parameters:
+       -h Show this help message
+       -D Show messages in stdout
+EOF
+}
+
+while getopts hD param;do
+    case $param in
+        h)
+            _usage && exit 0
+        ;;
+        D)
+            _debug=$yes
+        ;;
+        ?)
+            _usage && exit 2
+        ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+trap "[ -d $_tmp_dir ] && rm -rf $_tmp_dir" ERR EXIT
+
+primary_host=tumba.ghelew.ch
+primary_user=temail
+primary_port=2203
+
+secondary_host=wingman1.openbsd.amsterdam
+secondary_user=s22vm32
+secondary_port=31415
+
+id_key=/home/temail/.ssh/id_eshu.key
+
+set -A _domains
+
+_get_domains () {
+   _domain_file="$_tmp_dir/domains"
+    psql -U vmail -d vmail -qXA -F '\n' -c "select domain from domain d where not exists (select 1 from alias_domain ad where ad.alias_domain = d.domain);" | \
+        grep -Ev "ALL|rows|domain" > ${_domain_file}
+
+    [ -s "${_domain_file}" ] && \
+        while read domain; do
+            _domains="$_domains${_domains:+ }$domain"
+        done < "${_domain_file}"
+}
+
+_backup_mail() {
+   local host="$1"
+   local user="$2"
+   local port="$3"
+   local domain="$4"
+   local destination="$5"
+
+   _message "info" "Backing up domain $domain in host $host in destination:$destination"
+   lock=$(ssh -i $id_key -p $port $user@$host "[ -f $destination/temail.lock ] && cat $destination/temail.lock || echo $domain > $destination/temail.lock")
+   if [ "x$lock" == "x$domain" ]; then
+       _message "warning" "Backup already running for domain $domain... skipping"
+   else
+      openrsync --delete -ae "ssh -i $id_key -p $port" "/vhosts/$domain" $user@$host:"$destination"
+      ssh -i $id_key -p $port $user@$host "[ -f $destination/temail.lock ] && rm -f $destination/temail.lock"
+   fi
+   _message "info" "Backing up domain $d in host $host done"
+}
+
+_get_domains
+
+_message "info" "List of domain to backup: ${_domains[@]}"
+for d in ${_domains[@]}; do
+    _backup_mail $primary_host $primary_user $primary_port $d "/backup/mail"
+    _backup_mail $secondary_host $secondary_user $secondary_port $d "backup/mail"
+done

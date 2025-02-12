@@ -38,6 +38,7 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 - [[https://www.redis.io/docs/latest][Redis]]: In memory database used as a backend storage for Rspamd
 - [[https://www.dovecot.org][Dovecot]]: IMAP server which I've been using since...ever although I don't really master its configuration yet thanks to Kolab
 - [[https://www.postgresql.org][PostgreSQL]]:This is my favorite database since a long time and I am very happy to be able to use it with replication for the first time.
+- [[https://nginx.org/en/][nginx]]:This is my second favorite web server, unfotunately I need this httpd is too lightweight for my need.
 - [[https://letsencrypt.org][Let's Encrypt]]: I don't think it's necessary to describe what it is. But I'll use [[https://man.openbsd.org/acme-client.1][acme-client(1)]] included in OpenBSD base to get/sync my certificates.
 - *Monitoring & Health custom scripts*: As I want my setup to be highly available I need  a monitoring, alerting, and reporting tool that will check if one of my mail server is down or not working properly.
   for that I intend to create simple scripts.
@@ -67,6 +68,7 @@ The main rule is that if a tool exists in the OpenBSD base system then I'll use 
 13. [[./rspamd/][Rspamd Setting]]
 14. [[./smtpd/][smtpd Setting]]
 15. [[./sogo/][Sogo]]
+16. [[./backup/][Backup]]
 
 *** Deployment
   #+begin_src sh

@@ -1,0 +1,108 @@
+#! /usr/bin/env ksh
+set -eo pipefail
+PATH="$PATH:/usr/local/bin"
+
+typeset -i yes=0 no=1
+_scriptname="${0##*/}"
+_debug=$no
+set -A _backup_remote_servers "s22vm32@wingman1.openbsd.amsterdam" "s11vm22@wingman1.openbsd.amsterdam"
+set -A _backup_my_servers "temail@tumba.ghelew.ch"
+_tmp_dir=$(mktemp -d /tmp/temail.XXXXXXX.backup)
+
+_message () {
+   typeset -u mtype # all value are converted to upper case
+   local mpattern="%s: %s\n"
+   mtype=${1:-"Error"}
+   shift
+   local tag='temail-backup'
+   local facility='user.notice'
+
+   if [[ ${mtype} == "ERROR"  ]]; then
+       facility="user.error"
+      logger -p $facility -t $tag -s "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]]  && >&2 printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+      exit 1
+   else
+       logger -p $facility -t $tag "${mtype} - ${@:-\"Something happends...\"}"
+       [[ $_debug == $yes ]] && printf "$mpattern" $mtype "${@:-\"Something happends...\"}"
+   fi
+}
+
+_usage() {
+   cat <<-EOF
+usage: $_scriptname  [-h]
+  Description:
+        Backup databases to backup servers usign pg_dumpall
+
+  Parameters:
+       -h Show this help message
+EOF
+}
+
+while getopts hD param;do
+    case $param in
+        h)
+            _usage && exit 0
+        ;;
+        D)
+            _debug=$yes
+        ;;
+        ?)
+            _usage && exit 2
+        ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+trap "[ -d $_tmp_dir ] && rm -rf $_tmp_dir" ERR EXIT
+
+_db_backup(){
+   _message "info" "Starting databases dumps..."
+   pg_dumpall -U _postgresql > "$_tmp_dir/db.sql"
+   cp -f /var/redis/db/dump.rdb  "$_tmp_dir/redis.db"
+   _message "info" "Databases dumps done"
+}
+
+
+_db_copy_to_server(){
+   local server="$1"
+   local path="$2"
+   local port="$3"
+   local destination_file="$path/databases_$(date +'%Y%m%d').sql"
+   local redis_destination_file="$path/redis_$(date +'%Y%m%d').db"
+
+    _message "info" "Backing up to server: $server "
+    openrsync -ae "ssh -p $port -i /home/temail/.ssh/id_eshu.key" "$_tmp_dir/db.sql" $server:"$destination_file"
+    openrsync -ae "ssh -p $port -i /home/temail/.ssh/id_eshu.key" "$_tmp_dir/redis.db" $server:"$redis_destination_file"
+    _message "info" "Backing up to server: $server done!"
+}
+
+_copy_cleanup_script(){
+   local server="$1"
+   local path="$2"
+   local port="$3"
+
+   cat<<-EOF > "$_tmp_dir/cleanup.sh"
+#!/bin/sh
+find $path -type f -ctime 8 -delete
+
+EOF
+   chmod +x "$_tmp_dir/cleanup.sh"
+
+   _message "info" "Cleansing backup files in server: $server "
+   openrsync -ae "ssh -p $port -i /home/temail/.ssh/id_eshu.key" "$_tmp_dir/cleanup.sh" $server:"$path/"
+   ssh -p $port -i /home/temail/.ssh/id_eshu.key $server "$path/cleanup.sh"
+   _message "info" "Cleansing backup files in server: $server done"
+}
+
+_db_backup
+
+for server in "${_backup_remote_servers[@]}"; do
+    _db_copy_to_server $server "~/backup/db" "31415"
+    _copy_cleanup_script $server "~/backup/db" "31415"
+done
+# Local server
+for server in "${_backup_my_servers[@]}"; do
+    _db_copy_to_server $server "/backup/db" "2203"
+    _copy_cleanup_script $server "/backup/db" "2203"
+done
